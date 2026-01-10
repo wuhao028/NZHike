@@ -45,19 +45,50 @@ class DOCAPIService: ObservableObject {
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             
-            guard let httpResponse = response as? HTTPURLResponse,
-                  (200...299).contains(httpResponse.statusCode) else {
-                errorMessage = "API request failed"
+            guard let httpResponse = response as? HTTPURLResponse else {
+                errorMessage = "Invalid response from server"
                 isLoading = false
                 return
+            }
+            
+            guard (200...299).contains(httpResponse.statusCode) else {
+                let statusCode = httpResponse.statusCode
+                if let errorData = String(data: data, encoding: .utf8) {
+                    errorMessage = "API request failed (Status: \(statusCode)): \(errorData)"
+                } else {
+                    errorMessage = "API request failed with status code: \(statusCode)"
+                }
+                isLoading = false
+                return
+            }
+            
+            // Debug: print response data
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("API Response: \(jsonString)")
             }
             
             let decoder = JSONDecoder()
             decoder.keyDecodingStrategy = .convertFromSnakeCase
             trackDetail = try decoder.decode(TrackDetail.self, from: data)
             isLoading = false
+        } catch let decodingError as DecodingError {
+            var errorDescription = "Failed to decode API response: "
+            switch decodingError {
+            case .keyNotFound(let key, let context):
+                errorDescription += "Key '\(key.stringValue)' not found. \(context.debugDescription)"
+            case .typeMismatch(let type, let context):
+                errorDescription += "Type mismatch for type \(type). \(context.debugDescription)"
+            case .valueNotFound(let type, let context):
+                errorDescription += "Value not found for type \(type). \(context.debugDescription)"
+            case .dataCorrupted(let context):
+                errorDescription += "Data corrupted. \(context.debugDescription)"
+            @unknown default:
+                errorDescription += "Unknown decoding error"
+            }
+            errorMessage = errorDescription
+            isLoading = false
         } catch {
-            errorMessage = "Failed to parse data: \(error.localizedDescription)"
+            errorMessage = "Failed to fetch data: \(error.localizedDescription)"
             isLoading = false
         }
     }

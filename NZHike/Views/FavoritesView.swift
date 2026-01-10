@@ -8,17 +8,12 @@
 import SwiftUI
 
 struct FavoritesView: View {
-    @StateObject private var trackService = TrackService()
     @StateObject private var favoritesManager = FavoritesManager()
-    
-    var favoriteTracks: [Track] {
-        favoritesManager.getFavoriteTracks(from: trackService.allTracks)
-    }
     
     var body: some View {
         NavigationView {
             Group {
-                if favoriteTracks.isEmpty {
+                if favoritesManager.favoriteTracks.isEmpty {
                     VStack(spacing: 16) {
                         Image(systemName: "heart.slash")
                             .font(.system(size: 60))
@@ -38,13 +33,13 @@ struct FavoritesView: View {
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 12) {
-                            ForEach(favoriteTracks) { track in
+                            ForEach(favoritesManager.favoriteTracks) { track in
                                 NavigationLink(destination: TrackDetailView(trackId: track.id, docId: track.docId)) {
                                     TrackCard(
                                         track: track,
                                         isFavorite: true,
                                         onFavoriteToggle: {
-                                            favoritesManager.toggleFavorite(trackId: track.id)
+                                            favoritesManager.toggleFavorite(track: track)
                                         }
                                     )
                                 }
@@ -57,6 +52,9 @@ struct FavoritesView: View {
             }
             .navigationTitle("Favorites")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                favoritesManager.loadFavorites()
+            }
         }
     }
 }

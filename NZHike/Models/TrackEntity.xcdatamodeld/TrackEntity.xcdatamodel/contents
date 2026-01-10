@@ -14,4 +14,18 @@
         <attribute name="x" optional="NO" attributeType="Double" usesScalarValueType="YES"/>
         <attribute name="y" optional="NO" attributeType="Double" usesScalarValueType="YES"/>
     </entity>
+    <entity name="FavoriteTrackEntity" representedClassName="FavoriteTrackEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="assetId" optional="NO" attributeType="String"/>
+        <attribute name="descriptionText" optional="YES" attributeType="String"/>
+        <attribute name="difficulty" optional="YES" attributeType="String"/>
+        <attribute name="distance" optional="YES" attributeType="String"/>
+        <attribute name="docId" optional="YES" attributeType="String"/>
+        <attribute name="duration" optional="YES" attributeType="String"/>
+        <attribute name="lineData" optional="YES" attributeType="Binary"/>
+        <attribute name="name" optional="NO" attributeType="String"/>
+        <attribute name="regionData" optional="YES" attributeType="Binary"/>
+        <attribute name="x" optional="NO" attributeType="Double" usesScalarValueType="YES"/>
+        <attribute name="y" optional="NO" attributeType="Double" usesScalarValueType="YES"/>
+        <attribute name="favoritedAt" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+    </entity>
 </model>

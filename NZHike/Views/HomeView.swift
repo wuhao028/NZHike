@@ -27,21 +27,45 @@ struct HomeView: View {
                     .padding(.horizontal)
                     .padding(.top)
                     
-                    LazyVStack(spacing: 16) {
-                        ForEach(trackService.recommendedTracks) { track in
-                            NavigationLink(destination: TrackDetailView(trackId: track.id, docId: track.docId)) {
-                                RecommendedTrackCard(
-                                    track: track,
-                                    isFavorite: favoritesManager.isFavorite(trackId: track.id),
-                                    onFavoriteToggle: {
-                                        favoritesManager.toggleFavorite(trackId: track.id)
-                                    }
-                                )
+                    if trackService.recommendedTracks.isEmpty {
+                        VStack(spacing: 16) {
+                            if trackService.isLoading {
+                                ProgressView("Loading tracks...")
+                            } else {
+                                Image(systemName: "mountain.2")
+                                    .font(.system(size: 60))
+                                    .foregroundColor(.secondary)
+                                
+                                Text("No Recommended Tracks")
+                                    .font(.title2)
+                                    .fontWeight(.semibold)
+                                
+                                if let errorMessage = trackService.errorMessage {
+                                    Text(errorMessage)
+                                        .font(.caption)
+                                        .foregroundColor(.red)
+                                }
                             }
-                            .buttonStyle(PlainButtonStyle())
                         }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                    } else {
+                        LazyVStack(spacing: 16) {
+                            ForEach(trackService.recommendedTracks) { track in
+                                NavigationLink(destination: TrackDetailView(trackId: track.id, docId: track.docId)) {
+                                    RecommendedTrackCard(
+                                        track: track,
+                                        isFavorite: favoritesManager.isFavorite(trackId: track.id),
+                                        onFavoriteToggle: {
+                                            favoritesManager.toggleFavorite(track: track)
+                                        }
+                                    )
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
+                        }
+                        .padding(.horizontal)
                     }
-                    .padding(.horizontal)
                 }
             }
             .navigationTitle("Home")

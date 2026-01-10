@@ -53,8 +53,8 @@ struct Track: Codable, Identifiable, Hashable {
 }
 
 struct TrackDetail: Codable {
-    let id: String
-    let name: String
+    let id: String?
+    let name: String?
     let description: String?
     let region: String?
     let difficulty: String?
@@ -67,7 +67,7 @@ struct TrackDetail: Codable {
     let coordinates: Coordinates?
     
     struct Coordinates: Codable {
-        let latitude: Double
-        let longitude: Double
+        let latitude: Double?
+        let longitude: Double?
     }
 }

@@ -64,7 +64,7 @@ struct SearchView: View {
                                         track: track,
                                         isFavorite: favoritesManager.isFavorite(trackId: track.id),
                                         onFavoriteToggle: {
-                                            favoritesManager.toggleFavorite(trackId: track.id)
+                                            favoritesManager.toggleFavorite(track: track)
                                         }
                                     )
                                 }

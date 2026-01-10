@@ -19,15 +19,31 @@ class TrackService: ObservableObject {
     private var recommendedTrackIds: Set<String> = []
     
     init() {
+        // Load recommended tracks from local JSON file only
         loadRecommendedTracks()
+        // Load all tracks from database (for search functionality)
         loadTracksFromDatabase()
     }
     
     private func loadRecommendedTracks() {
-        guard let url = Bundle.main.url(forResource: "recommendedTracks", withExtension: "json"),
-              let data = try? Data(contentsOf: url),
-              let recommendedTracksData = try? JSONDecoder().decode([RecommendedTrack].self, from: data) else {
-            errorMessage = "Failed to load recommended tracks"
+        isLoading = true
+        errorMessage = nil
+        
+        guard let url = Bundle.main.url(forResource: "recommendedTracks", withExtension: "json") else {
+            errorMessage = "recommendedTracks.json file not found in bundle"
+            isLoading = false
+            return
+        }
+        
+        guard let data = try? Data(contentsOf: url) else {
+            errorMessage = "Failed to read recommendedTracks.json data"
+            isLoading = false
+            return
+        }
+        
+        guard let recommendedTracksData = try? JSONDecoder().decode([RecommendedTrack].self, from: data) else {
+            errorMessage = "Failed to decode recommendedTracks.json"
+            isLoading = false
             return
         }
         
@@ -48,6 +64,8 @@ class TrackService: ObservableObject {
             track.docId = recommendedTrack.docId
             return track
         }
+        
+        isLoading = false
     }
     
     func loadTracksFromDatabase() {
@@ -60,9 +78,8 @@ class TrackService: ObservableObject {
             if allTracks.isEmpty {
                 // If database is empty, try loading from JSON
                 loadTracksFromJSON()
-            } else {
-                updateRecommendedTracks()
             }
+            // Note: We don't update recommendedTracks here because they come from local JSON
         } catch {
             errorMessage = "Failed to load tracks from database: \(error.localizedDescription)"
             // If database load fails, try JSON
@@ -141,30 +158,12 @@ class TrackService: ObservableObject {
         }
     }
     
+    // DEPRECATED: This method is no longer used
+    // Recommended tracks are loaded directly from recommendedTracks.json via loadRecommendedTracks()
+    // This method is kept for reference but is not called anywhere
     private func updateRecommendedTracks() {
-        // First try to get recommended tracks from database using isRecommended flag
-        let context = persistenceController.container.viewContext
-        let request: NSFetchRequest<TrackEntity> = TrackEntity.fetchRequest()
-        request.predicate = NSPredicate(format: "isRecommended == YES")
-        
-        if let recommendedEntities = try? context.fetch(request), !recommendedEntities.isEmpty {
-            recommendedTracks = recommendedEntities.map { Track(from: $0) }
-            return
-        }
-        
-        // Fallback: filter by matching logic
-        recommendedTracks = allTracks.filter { track in
-            // Match by assetId, docId, or track name
-            recommendedTrackIds.contains(track.assetId) ||
-            (track.docId != nil && recommendedTrackIds.contains(track.docId!)) ||
-            recommendedTrackIds.contains { recommendedId in
-                let trackNameLower = track.name.lowercased()
-                let recommendedIdLower = recommendedId.lowercased()
-                // Check if track name contains the recommended ID (e.g., "Tongariro Alpine Crossing" contains "tongariro-alpine-crossing")
-                return trackNameLower.replacingOccurrences(of: " ", with: "-").contains(recommendedIdLower) ||
-                       trackNameLower.contains(recommendedIdLower.replacingOccurrences(of: "-", with: " "))
-            }
-        }
+        // This method is deprecated - recommended tracks come from local JSON only
+        // Keeping it for reference but it won't be called
     }
     
     func searchTracks(query: String) -> [Track] {
