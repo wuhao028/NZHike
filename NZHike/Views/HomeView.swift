@@ -52,7 +52,7 @@ struct HomeView: View {
                     } else {
                         LazyVStack(spacing: 16) {
                             ForEach(trackService.recommendedTracks) { track in
-                                NavigationLink(destination: TrackDetailView(trackId: track.id, docId: track.docId)) {
+                                NavigationLink(destination: TrackDetailView(trackId: track.id)) {
                                     RecommendedTrackCard(
                                         track: track,
                                         isFavorite: favoritesManager.isFavorite(trackId: track.id),

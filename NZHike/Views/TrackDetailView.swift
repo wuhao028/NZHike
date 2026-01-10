@@ -8,8 +8,7 @@
 import SwiftUI
 
 struct TrackDetailView: View {
-    let trackId: String
-    let docId: String?
+    let trackId: String // This is the assetId
     
     @StateObject private var docService = DOCAPIService()
     @StateObject private var favoritesManager = FavoritesManager()
@@ -77,179 +76,161 @@ struct TrackDetailView: View {
                     .padding()
                 }
                 
-                if let docId = docId {
-                    Divider()
+                // Always try to fetch API details using assetId
+                Divider()
+                    .padding(.horizontal)
+                
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("API Details")
+                        .font(.title2)
+                        .fontWeight(.bold)
                         .padding(.horizontal)
                     
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("API Details")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .padding(.horizontal)
-                        
-                        if docService.isLoading {
-                            HStack {
-                                ProgressView()
-                                Text("Loading details from DOC API...")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                        } else if let detail = docService.trackDetail {
-                            VStack(alignment: .leading, spacing: 16) {
-                                if let fullDescription = detail.description {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("Description")
-                                            .font(.headline)
-                                        Text(fullDescription)
-                                            .font(.body)
-                                    }
-                                    .padding(.horizontal)
-                                }
-                                
-                                VStack(spacing: 12) {
-                                    if let difficulty = detail.difficulty {
-                                        DetailRow(icon: "exclamationmark.triangle", title: "Difficulty", value: difficulty)
-                                    }
-                                    
-                                    if let duration = detail.duration {
-                                        DetailRow(icon: "clock", title: "Duration", value: duration)
-                                    }
-                                    
-                                    if let distance = detail.distance {
-                                        DetailRow(icon: "ruler", title: "Distance", value: distance)
-                                    }
-                                    
-                                    if let elevation = detail.elevation {
-                                        DetailRow(icon: "arrow.up.and.down", title: "Elevation", value: elevation)
-                                    }
-                                }
-                                .padding()
-                                .background(Color(.systemGray6))
-                                .cornerRadius(12)
-                                .padding(.horizontal)
-                                
-                                if let facilities = detail.facilities, !facilities.isEmpty {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("Facilities")
-                                            .font(.headline)
-                                        
-                                        ForEach(facilities, id: \.self) { facility in
-                                            HStack {
-                                                Image(systemName: "checkmark.circle.fill")
-                                                    .foregroundColor(.green)
-                                                Text(facility)
-                                            }
-                                        }
-                                    }
-                                    .padding(.horizontal)
-                                }
-                                
-                                if let hazards = detail.hazards, !hazards.isEmpty {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("Hazards & Warnings")
-                                            .font(.headline)
-                                        
-                                        ForEach(hazards, id: \.self) { hazard in
-                                            HStack(alignment: .top) {
-                                                Image(systemName: "exclamationmark.triangle.fill")
-                                                    .foregroundColor(.orange)
-                                                Text(hazard)
-                                            }
-                                        }
-                                    }
-                                    .padding(.horizontal)
-                                }
-                                
-                                if let images = detail.images, !images.isEmpty {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("Images")
-                                            .font(.headline)
-                                        
-                                        ScrollView(.horizontal, showsIndicators: false) {
-                                            HStack(spacing: 12) {
-                                                ForEach(images, id: \.self) { imageUrl in
-                                                    AsyncImage(url: URL(string: imageUrl)) { image in
-                                                        image
-                                                            .resizable()
-                                                            .aspectRatio(contentMode: .fill)
-                                                    } placeholder: {
-                                                        ProgressView()
-                                                    }
-                                                    .frame(width: 200, height: 150)
-                                                    .cornerRadius(8)
-                                                    .clipped()
-                                                }
-                                            }
-                                        }
-                                    }
-                                    .padding(.horizontal)
-                                }
-                                
-                                if let coordinates = detail.coordinates,
-                                   let latitude = coordinates.latitude,
-                                   let longitude = coordinates.longitude {
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        Text("Location")
-                                            .font(.headline)
-                                        
-                                        HStack {
-                                            Image(systemName: "mappin.circle.fill")
-                                                .foregroundColor(.red)
-                                            VStack(alignment: .leading, spacing: 4) {
-                                                Text("Latitude: \(latitude, specifier: "%.6f")")
-                                                    .font(.caption)
-                                                Text("Longitude: \(longitude, specifier: "%.6f")")
-                                                    .font(.caption)
-                                            }
-                                        }
-                                    }
-                                    .padding(.horizontal)
-                                }
-                            }
-                        } else if let errorMessage = docService.errorMessage {
-                            VStack(spacing: 8) {
-                                Image(systemName: "exclamationmark.triangle")
-                                    .font(.title)
-                                    .foregroundColor(.orange)
-                                
-                                Text("Failed to load API details")
-                                    .font(.headline)
-                                
-                                Text(errorMessage)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                    .multilineTextAlignment(.center)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding()
+                    if docService.isLoading {
+                        HStack {
+                            ProgressView()
+                            Text("Loading details from DOC API...")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
                         }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                    } else if let detail = docService.trackDetail {
+                        VStack(alignment: .leading, spacing: 16) {
+                            if let fullDescription = detail.description {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Description")
+                                        .font(.headline)
+                                    Text(fullDescription)
+                                        .font(.body)
+                                }
+                                .padding(.horizontal)
+                            }
+                            
+                            VStack(spacing: 12) {
+                                if let difficulty = detail.difficulty {
+                                    DetailRow(icon: "exclamationmark.triangle", title: "Difficulty", value: difficulty)
+                                }
+                                
+                                if let duration = detail.duration {
+                                    DetailRow(icon: "clock", title: "Duration", value: duration)
+                                }
+                                
+                                if let distance = detail.distance {
+                                    DetailRow(icon: "ruler", title: "Distance", value: distance)
+                                }
+                                
+                                if let elevation = detail.elevation {
+                                    DetailRow(icon: "arrow.up.and.down", title: "Elevation", value: elevation)
+                                }
+                            }
+                            .padding()
+                            .background(Color(.systemGray6))
+                            .cornerRadius(12)
+                            .padding(.horizontal)
+                            
+                            if let facilities = detail.facilities, !facilities.isEmpty {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Facilities")
+                                        .font(.headline)
+                                    
+                                    ForEach(facilities, id: \.self) { facility in
+                                        HStack {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .foregroundColor(.green)
+                                            Text(facility)
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal)
+                            }
+                            
+                            if let hazards = detail.hazards, !hazards.isEmpty {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Hazards & Warnings")
+                                        .font(.headline)
+                                    
+                                    ForEach(hazards, id: \.self) { hazard in
+                                        HStack(alignment: .top) {
+                                            Image(systemName: "exclamationmark.triangle.fill")
+                                                .foregroundColor(.orange)
+                                            Text(hazard)
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal)
+                            }
+                            
+                            if let images = detail.images, !images.isEmpty {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Images")
+                                        .font(.headline)
+                                    
+                                    ScrollView(.horizontal, showsIndicators: false) {
+                                        HStack(spacing: 12) {
+                                            ForEach(images, id: \.self) { imageUrl in
+                                                AsyncImage(url: URL(string: imageUrl)) { image in
+                                                    image
+                                                        .resizable()
+                                                        .aspectRatio(contentMode: .fill)
+                                                } placeholder: {
+                                                    ProgressView()
+                                                }
+                                                .frame(width: 200, height: 150)
+                                                .cornerRadius(8)
+                                                .clipped()
+                                            }
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal)
+                            }
+                            
+                            if let coordinates = detail.coordinates,
+                               let latitude = coordinates.latitude,
+                               let longitude = coordinates.longitude {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Location")
+                                        .font(.headline)
+                                    
+                                    HStack {
+                                        Image(systemName: "mappin.circle.fill")
+                                            .foregroundColor(.red)
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Latitude: \(latitude, specifier: "%.6f")")
+                                                .font(.caption)
+                                            Text("Longitude: \(longitude, specifier: "%.6f")")
+                                                .font(.caption)
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal)
+                            }
+                        }
+                    } else if let errorMessage = docService.errorMessage {
+                        VStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(.title)
+                                .foregroundColor(.orange)
+                            
+                            Text("Failed to load API details")
+                                .font(.headline)
+                            
+                            Text(errorMessage)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
                     }
-                } else {
-                    // Show message if no docId available
-                    VStack(spacing: 8) {
-                        Image(systemName: "info.circle")
-                            .font(.title)
-                            .foregroundColor(.blue)
-                        
-                        Text("No API details available")
-                            .font(.headline)
-                        
-                        Text("This track doesn't have a DOC API ID")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
                 }
             }
         }
         .navigationBarTitleDisplayMode(.inline)
         .task {
-            if let docId = docId {
-                await docService.fetchTrackDetail(docId: docId)
-            }
+            // Fetch API details using assetId (trackId)
+            await docService.fetchTrackDetail(assetId: trackId)
         }
     }
 }

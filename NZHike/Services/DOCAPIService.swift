@@ -24,11 +24,11 @@ class DOCAPIService: ObservableObject {
         return key
     }
     
-    func fetchTrackDetail(docId: String) async {
+    func fetchTrackDetail(assetId: String) async {
         isLoading = true
         errorMessage = nil
         
-        var urlComponents = URLComponents(string: "\(baseURL)/\(docId)")
+        var urlComponents = URLComponents(string: "\(baseURL)/\(assetId)/detail")
         urlComponents?.queryItems = [
             URLQueryItem(name: "doc.api.key", value: apiKey)
         ]

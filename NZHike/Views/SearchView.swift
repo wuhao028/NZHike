@@ -59,7 +59,7 @@ struct SearchView: View {
                     ScrollView {
                         LazyVStack(spacing: 12) {
                             ForEach(filteredTracks) { track in
-                                NavigationLink(destination: TrackDetailView(trackId: track.id, docId: track.docId)) {
+                                NavigationLink(destination: TrackDetailView(trackId: track.id)) {
                                     TrackCard(
                                         track: track,
                                         isFavorite: favoritesManager.isFavorite(trackId: track.id),

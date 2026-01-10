@@ -34,7 +34,7 @@ struct FavoritesView: View {
                     ScrollView {
                         LazyVStack(spacing: 12) {
                             ForEach(favoritesManager.favoriteTracks) { track in
-                                NavigationLink(destination: TrackDetailView(trackId: track.id, docId: track.docId)) {
+                                NavigationLink(destination: TrackDetailView(trackId: track.id)) {
                                     TrackCard(
                                         track: track,
                                         isFavorite: true,
