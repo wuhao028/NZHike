@@ -41,7 +41,7 @@ class DOCAPIService: ObservableObject {
         
         var request = URLRequest(url: url)
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        
+        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             
