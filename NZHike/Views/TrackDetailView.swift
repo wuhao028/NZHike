@@ -97,31 +97,31 @@ struct TrackDetailView: View {
                         .padding()
                     } else if let detail = docService.trackDetail {
                         VStack(alignment: .leading, spacing: 16) {
-                            if let fullDescription = detail.description {
+                            if !detail.introduction.isEmpty {
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text("Description")
                                         .font(.headline)
-                                    Text(fullDescription)
+                                    Text(detail.introduction)
                                         .font(.body)
                                 }
                                 .padding(.horizontal)
                             }
                             
                             VStack(spacing: 12) {
-                                if let difficulty = detail.difficulty {
-                                    DetailRow(icon: "exclamationmark.triangle", title: "Difficulty", value: difficulty)
+                                if !detail.distance.isEmpty {
+                                    DetailRow(icon: "exclamationmark.triangle", title: "Difficulty", value: detail.distance)
                                 }
                                 
-                                if let duration = detail.duration {
+                                if let duration = detail.mtbDuration {
                                     DetailRow(icon: "clock", title: "Duration", value: duration)
                                 }
                                 
-                                if let distance = detail.distance {
-                                    DetailRow(icon: "ruler", title: "Distance", value: distance)
+                                if !detail.distance.isEmpty {
+                                    DetailRow(icon: "ruler", title: "Distance", value: detail.distance)
                                 }
                                 
-                                if let elevation = detail.elevation {
-                                    DetailRow(icon: "arrow.up.and.down", title: "Elevation", value: elevation)
+                                if !detail.walkDuration.isEmpty {
+                                    DetailRow(icon: "arrow.up.and.down", title: "Elevation", value: detail.walkDuration)
                                 }
                             }
                             .padding()
@@ -129,83 +129,25 @@ struct TrackDetailView: View {
                             .cornerRadius(12)
                             .padding(.horizontal)
                             
-                            if let facilities = detail.facilities, !facilities.isEmpty {
+                            if !detail.introductionThumbnail.isEmpty {
                                 VStack(alignment: .leading, spacing: 8) {
-                                    Text("Facilities")
+                                    Text("Image")
                                         .font(.headline)
                                     
-                                    ForEach(facilities, id: \.self) { facility in
-                                        HStack {
-                                            Image(systemName: "checkmark.circle.fill")
-                                                .foregroundColor(.green)
-                                            Text(facility)
-                                        }
+                                    AsyncImage(url: URL(string: detail.introductionThumbnail)) { image in
+                                        image
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                    } placeholder: {
+                                        ProgressView()
                                     }
+                                    .frame(width: 200, height: 150)
+                                    .cornerRadius(8)
+                                    .clipped()
                                 }
                                 .padding(.horizontal)
                             }
                             
-                            if let hazards = detail.hazards, !hazards.isEmpty {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Hazards & Warnings")
-                                        .font(.headline)
-                                    
-                                    ForEach(hazards, id: \.self) { hazard in
-                                        HStack(alignment: .top) {
-                                            Image(systemName: "exclamationmark.triangle.fill")
-                                                .foregroundColor(.orange)
-                                            Text(hazard)
-                                        }
-                                    }
-                                }
-                                .padding(.horizontal)
-                            }
-                            
-                            if let images = detail.images, !images.isEmpty {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Images")
-                                        .font(.headline)
-                                    
-                                    ScrollView(.horizontal, showsIndicators: false) {
-                                        HStack(spacing: 12) {
-                                            ForEach(images, id: \.self) { imageUrl in
-                                                AsyncImage(url: URL(string: imageUrl)) { image in
-                                                    image
-                                                        .resizable()
-                                                        .aspectRatio(contentMode: .fill)
-                                                } placeholder: {
-                                                    ProgressView()
-                                                }
-                                                .frame(width: 200, height: 150)
-                                                .cornerRadius(8)
-                                                .clipped()
-                                            }
-                                        }
-                                    }
-                                }
-                                .padding(.horizontal)
-                            }
-                            
-                            if let coordinates = detail.coordinates,
-                               let latitude = coordinates.latitude,
-                               let longitude = coordinates.longitude {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Location")
-                                        .font(.headline)
-                                    
-                                    HStack {
-                                        Image(systemName: "mappin.circle.fill")
-                                            .foregroundColor(.red)
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text("Latitude: \(latitude, specifier: "%.6f")")
-                                                .font(.caption)
-                                            Text("Longitude: \(longitude, specifier: "%.6f")")
-                                                .font(.caption)
-                                        }
-                                    }
-                                }
-                                .padding(.horizontal)
-                            }
                         }
                     } else if let errorMessage = docService.errorMessage {
                         VStack(spacing: 8) {

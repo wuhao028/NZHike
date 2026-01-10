@@ -53,21 +53,31 @@ struct Track: Codable, Identifiable, Hashable {
 }
 
 struct TrackDetail: Codable {
-    let id: String?
-    let name: String?
-    let description: String?
-    let region: String?
-    let difficulty: String?
-    let duration: String?
-    let distance: String?
-    let elevation: String?
-    let facilities: [String]?
-    let hazards: [String]?
-    let images: [String]?
-    let coordinates: Coordinates?
+    let assetId: String
+    let name: String
+    let introduction: String
+    let introductionThumbnail: String
+    let permittedActivities: [String]
+    let distance: String
+    let walkDuration: String
+    let walkDurationCategory: [String]
+    let walkTrackCategory: [String]
     
-    struct Coordinates: Codable {
-        let latitude: Double?
-        let longitude: Double?
-    }
+    let wheelchairsAndBuggies: String?
+    let mtbDuration: String?
+    let mtbDurationCategory: [String]
+    let mtbTrackCategory: [String]
+    let kayakingDuration: String?
+    
+    let dogsAllowed: String
+    let locationString: String
+    let locationArray: [String]
+    let region: [String]
+    let staticLink: String
+    
+    let x: Double
+    let y: Double
+    
+    /// [[[Double]]] line coordinates
+    let line: [[[Double]]]
 }
