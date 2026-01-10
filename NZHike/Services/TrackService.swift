@@ -1,0 +1,179 @@
+//
+//  TrackService.swift
+//  NZHike
+//
+//  Created by wuhao028 on 09/01/2026.
+//
+
+import Foundation
+import CoreData
+
+@MainActor
+class TrackService: ObservableObject {
+    @Published var allTracks: [Track] = []
+    @Published var recommendedTracks: [Track] = []
+    @Published var isLoading = false
+    @Published var errorMessage: String?
+    
+    private let persistenceController = PersistenceController.shared
+    private var recommendedTrackIds: Set<String> = []
+    
+    init() {
+        loadRecommendedTracks()
+        loadTracksFromDatabase()
+    }
+    
+    private func loadRecommendedTracks() {
+        guard let url = Bundle.main.url(forResource: "recommendedTracks", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let recommendedTracksData = try? JSONDecoder().decode([RecommendedTrack].self, from: data) else {
+            errorMessage = "Failed to load recommended tracks"
+            return
+        }
+        
+        // Convert RecommendedTrack to Track
+        recommendedTracks = recommendedTracksData.map { recommendedTrack in
+            var track = Track(
+                assetId: recommendedTrack.id,
+                name: recommendedTrack.name,
+                region: [recommendedTrack.region],
+                x: 0,
+                y: 0,
+                line: []
+            )
+            track.difficulty = recommendedTrack.difficulty
+            track.duration = recommendedTrack.duration
+            track.distance = recommendedTrack.distance
+            track.description = recommendedTrack.description
+            track.docId = recommendedTrack.docId
+            return track
+        }
+    }
+    
+    func loadTracksFromDatabase() {
+        let context = persistenceController.container.viewContext
+        let request: NSFetchRequest<TrackEntity> = TrackEntity.fetchRequest()
+        
+        do {
+            let entities = try context.fetch(request)
+            allTracks = entities.map { Track(from: $0) }
+            if allTracks.isEmpty {
+                // If database is empty, try loading from JSON
+                loadTracksFromJSON()
+            } else {
+                updateRecommendedTracks()
+            }
+        } catch {
+            errorMessage = "Failed to load tracks from database: \(error.localizedDescription)"
+            // If database load fails, try JSON
+            if allTracks.isEmpty {
+                loadTracksFromJSON()
+            }
+        }
+    }
+    
+    func refreshTracks() {
+        loadTracksFromDatabase()
+    }
+    
+    func loadTracksFromJSON() {
+        // Try allTracks.json first, then fallback to tracks.json
+        let jsonFileName = Bundle.main.url(forResource: "allTracks", withExtension: "json") != nil ? "allTracks" : "tracks"
+        
+        guard let url = Bundle.main.url(forResource: jsonFileName, withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let tracks = try? JSONDecoder().decode([Track].self, from: data) else {
+            errorMessage = "Failed to load tracks from JSON"
+            return
+        }
+        
+        let context = persistenceController.container.viewContext
+        
+        for track in tracks {
+            // Check if track already exists
+            let request: NSFetchRequest<TrackEntity> = TrackEntity.fetchRequest()
+            request.predicate = NSPredicate(format: "assetId == %@", track.assetId)
+            
+            if let existingEntity = try? context.fetch(request).first {
+                // Update existing entity
+                existingEntity.name = track.name
+                existingEntity.x = track.x
+                existingEntity.y = track.y
+                existingEntity.difficulty = track.difficulty
+                existingEntity.duration = track.duration
+                existingEntity.distance = track.distance
+                existingEntity.descriptionText = track.description
+                existingEntity.docId = track.docId
+                existingEntity.isRecommended = recommendedTrackIds.contains(track.assetId) ||
+                                               (track.docId != nil && recommendedTrackIds.contains(track.docId!)) ||
+                                               recommendedTrackIds.contains { recommendedId in
+                                                   let trackNameLower = track.name.lowercased()
+                                                   let recommendedIdLower = recommendedId.lowercased()
+                                                   return trackNameLower.replacingOccurrences(of: " ", with: "-").contains(recommendedIdLower) ||
+                                                          trackNameLower.contains(recommendedIdLower.replacingOccurrences(of: "-", with: " "))
+                                               }
+                
+                if let regionData = try? JSONEncoder().encode(track.region) {
+                    existingEntity.regionData = regionData
+                }
+                if let lineData = try? JSONEncoder().encode(track.line) {
+                    existingEntity.lineData = lineData
+                }
+            } else {
+                // Create new entity
+                let entity = track.toEntity(context: context)
+                entity.isRecommended = recommendedTrackIds.contains(track.assetId) ||
+                                       (track.docId != nil && recommendedTrackIds.contains(track.docId!)) ||
+                                       recommendedTrackIds.contains { recommendedId in
+                                           let trackNameLower = track.name.lowercased()
+                                           let recommendedIdLower = recommendedId.lowercased()
+                                           return trackNameLower.replacingOccurrences(of: " ", with: "-").contains(recommendedIdLower) ||
+                                                  trackNameLower.contains(recommendedIdLower.replacingOccurrences(of: "-", with: " "))
+                                       }
+            }
+        }
+        
+        do {
+            try context.save()
+            loadTracksFromDatabase()
+        } catch {
+            errorMessage = "Failed to save tracks to database: \(error.localizedDescription)"
+        }
+    }
+    
+    private func updateRecommendedTracks() {
+        // First try to get recommended tracks from database using isRecommended flag
+        let context = persistenceController.container.viewContext
+        let request: NSFetchRequest<TrackEntity> = TrackEntity.fetchRequest()
+        request.predicate = NSPredicate(format: "isRecommended == YES")
+        
+        if let recommendedEntities = try? context.fetch(request), !recommendedEntities.isEmpty {
+            recommendedTracks = recommendedEntities.map { Track(from: $0) }
+            return
+        }
+        
+        // Fallback: filter by matching logic
+        recommendedTracks = allTracks.filter { track in
+            // Match by assetId, docId, or track name
+            recommendedTrackIds.contains(track.assetId) ||
+            (track.docId != nil && recommendedTrackIds.contains(track.docId!)) ||
+            recommendedTrackIds.contains { recommendedId in
+                let trackNameLower = track.name.lowercased()
+                let recommendedIdLower = recommendedId.lowercased()
+                // Check if track name contains the recommended ID (e.g., "Tongariro Alpine Crossing" contains "tongariro-alpine-crossing")
+                return trackNameLower.replacingOccurrences(of: " ", with: "-").contains(recommendedIdLower) ||
+                       trackNameLower.contains(recommendedIdLower.replacingOccurrences(of: "-", with: " "))
+            }
+        }
+    }
+    
+    func searchTracks(query: String) -> [Track] {
+        guard !query.isEmpty else { return allTracks }
+        let lowercasedQuery = query.lowercased()
+        return allTracks.filter { track in
+            track.name.lowercased().contains(lowercasedQuery) ||
+            track.region.contains { $0.lowercased().contains(lowercasedQuery) } ||
+            (track.description?.lowercased().contains(lowercasedQuery) ?? false)
+        }
+    }
+}
