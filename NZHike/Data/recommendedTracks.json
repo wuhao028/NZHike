@@ -1,6 +1,6 @@
 [
   {
-    "id": "rec_1",
+    "id": "5ce26066-426b-4060-9b2e-077a8aeafc8c",
     "name": "Tongariro Alpine Crossing",
     "region": "Central North Island",
     "difficulty": "Hard",
@@ -11,7 +11,7 @@
     "doc_id": "tongariro-alpine-crossing"
   },
   {
-    "id": "rec_2",
+    "id": "26f7e543-e3bf-48a3-a174-618bf790f6df",
     "name": "Milford Track",
     "region": "Fiordland",
     "difficulty": "Moderate",
@@ -22,7 +22,7 @@
     "doc_id": "milford-track"
   },
   {
-    "id": "rec_3",
+    "id": "69bc21c3-4b8b-4fb2-ac98-2ac21d38cc25",
     "name": "Routeburn Track",
     "region": "Fiordland/Queenstown",
     "difficulty": "Moderate",
@@ -33,7 +33,7 @@
     "doc_id": "routeburn-track"
   },
   {
-    "id": "rec_4",
+    "id": "114ff80d-12f4-4f0b-8384-103f0c8e6efc",
     "name": "Abel Tasman Coast Track",
     "region": "Nelson/Tasman",
     "difficulty": "Easy",
@@ -44,7 +44,7 @@
     "doc_id": "abel-tasman-coast-track"
   },
   {
-    "id": "rec_5",
+    "id": "f7da33e0-50a6-43e2-b253-65e2a5cd3413",
     "name": "Kepler Track",
     "region": "Fiordland",
     "difficulty": "Moderate",
@@ -55,7 +55,7 @@
     "doc_id": "kepler-track"
   },
   {
-    "id": "rec_6",
+    "id": "3df63c1e-5917-46f1-9516-dfdb75b58f42",
     "name": "Rakiura Track",
     "region": "Stewart Island",
     "difficulty": "Easy",
@@ -66,7 +66,7 @@
     "doc_id": "rakiura-track"
   },
   {
-    "id": "rec_7",
+    "id": "9943e482-ca33-4736-8b7a-a0199a2a4a0c",
     "name": "Heaphy Track",
     "region": "West Coast/Nelson",
     "difficulty": "Moderate",
@@ -77,7 +77,7 @@
     "doc_id": "heaphy-track"
   },
   {
-    "id": "rec_8",
+    "id": "c53005d1-c842-4e24-bade-48f61c977f31",
     "name": "Paparoa Track",
     "region": "West Coast",
     "difficulty": "Moderate",
@@ -88,7 +88,7 @@
     "doc_id": "paparoa-track"
   },
   {
-    "id": "rec_9",
+    "id": "515b197a-9138-40e7-b099-03b2cd121941",
     "name": "Lake Waikaremoana Track",
     "region": "East Coast",
     "difficulty": "Moderate",
@@ -99,7 +99,7 @@
     "doc_id": "lake-waikaremoana-track"
   },
   {
-    "id": "rec_10",
+    "id": "ebcd19a9-125f-42fa-9c72-5ec8e19de8e3",
     "name": "Whanganui Journey",
     "region": "Whanganui",
     "difficulty": "Easy",
@@ -110,7 +110,7 @@
     "doc_id": "whanganui-journey"
   },
   {
-    "id": "rec_11",
+    "id": "e3171ec1-04a3-4779-a4a8-6c0fde9c4c3c",
     "name": "Queen Charlotte Track",
     "region": "Marlborough Sounds",
     "difficulty": "Easy to Moderate",
@@ -121,7 +121,7 @@
     "doc_id": "queen-charlotte-track"
   },
   {
-    "id": "rec_12",
+    "id": "d3a34bd1-ff56-411e-81b2-96a2b7107160",
     "name": "Mount Taranaki Summit Track",
     "region": "Taranaki",
     "difficulty": "Hard",
