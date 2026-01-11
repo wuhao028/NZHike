@@ -9,62 +9,125 @@ import SwiftUI
 
 struct HomeView: View {
     @StateObject private var trackService = TrackService()
+    @StateObject private var hutService = HutService()
     @StateObject private var favoritesManager = FavoritesManager()
+    @State private var selectedTab = 0
     
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Recommended Tracks")
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                        
-                        Text("Explore New Zealand's most beautiful hiking trails")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(.horizontal)
-                    .padding(.top)
-                    
-                    if trackService.recommendedTracks.isEmpty {
-                        VStack(spacing: 16) {
-                            if trackService.isLoading {
-                                ProgressView("Loading tracks...")
-                            } else {
-                                Image(systemName: "mountain.2")
-                                    .font(.system(size: 60))
+            VStack(spacing: 0) {
+                Picker("Type", selection: $selectedTab) {
+                    Text("Tracks").tag(0)
+                    Text("Huts").tag(1)
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .padding()
+                
+                if selectedTab == 0 {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 20) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Recommended Tracks")
+                                    .font(.largeTitle)
+                                    .fontWeight(.bold)
+                                
+                                Text("Explore New Zealand's most beautiful hiking trails")
+                                    .font(.subheadline)
                                     .foregroundColor(.secondary)
-                                
-                                Text("No Recommended Tracks")
-                                    .font(.title2)
-                                    .fontWeight(.semibold)
-                                
-                                if let errorMessage = trackService.errorMessage {
-                                    Text(errorMessage)
-                                        .font(.caption)
-                                        .foregroundColor(.red)
-                                }
                             }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                    } else {
-                        LazyVStack(spacing: 16) {
-                            ForEach(trackService.recommendedTracks) { track in
-                                NavigationLink(destination: TrackDetailView(trackId: track.id)) {
-                                    RecommendedTrackCard(
-                                        track: track,
-                                        isFavorite: favoritesManager.isFavorite(trackId: track.id),
-                                        onFavoriteToggle: {
-                                            favoritesManager.toggleFavorite(track: track)
+                            .padding(.horizontal)
+                            .padding(.top)
+                            
+                            if trackService.recommendedTracks.isEmpty {
+                                VStack(spacing: 16) {
+                                    if trackService.isLoading {
+                                        ProgressView("Loading tracks...")
+                                    } else {
+                                        Image(systemName: "mountain.2")
+                                            .font(.system(size: 60))
+                                            .foregroundColor(.secondary)
+                                        
+                                        Text("No Recommended Tracks")
+                                            .font(.title2)
+                                            .fontWeight(.semibold)
+                                        
+                                        if let errorMessage = trackService.errorMessage {
+                                            Text(errorMessage)
+                                                .font(.caption)
+                                                .foregroundColor(.red)
                                         }
-                                    )
+                                    }
                                 }
-                                .buttonStyle(PlainButtonStyle())
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                            } else {
+                                LazyVStack(spacing: 16) {
+                                    ForEach(trackService.recommendedTracks) { track in
+                                        NavigationLink(destination: TrackDetailView(trackId: track.id)) {
+                                            RecommendedTrackCard(
+                                                track: track,
+                                                isFavorite: favoritesManager.isFavorite(trackId: track.id),
+                                                onFavoriteToggle: {
+                                                    favoritesManager.toggleFavorite(track: track)
+                                                }
+                                            )
+                                        }
+                                        .buttonStyle(PlainButtonStyle())
+                                    }
+                                }
+                                .padding(.horizontal)
                             }
                         }
-                        .padding(.horizontal)
+                    }
+                } else {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 20) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Recommended Huts")
+                                    .font(.largeTitle)
+                                    .fontWeight(.bold)
+                                
+                                Text("Stay in New Zealand's iconic backcountry huts")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.horizontal)
+                            .padding(.top)
+                            
+                            if hutService.recommendedHuts.isEmpty {
+                                VStack(spacing: 16) {
+                                    if hutService.isLoading {
+                                        ProgressView("Loading huts...")
+                                    } else {
+                                        Image(systemName: "house")
+                                            .font(.system(size: 60))
+                                            .foregroundColor(.secondary)
+                                        
+                                        Text("No Recommended Huts")
+                                            .font(.title2)
+                                            .fontWeight(.semibold)
+                                        
+                                        if let errorMessage = hutService.errorMessage {
+                                            Text(errorMessage)
+                                                .font(.caption)
+                                                .foregroundColor(.red)
+                                        }
+                                    }
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                            } else {
+                                LazyVStack(spacing: 16) {
+                                    ForEach(hutService.recommendedHuts) { hut in
+                                        NavigationLink(destination: HutDetailView(hut: hut)) {
+                                            RecommendedHutCard(hut: hut)
+                                        }
+                                        .buttonStyle(PlainButtonStyle())
+                                    }
+                                }
+                                .padding(.horizontal)
+                            }
+                        }
                     }
                 }
             }
@@ -73,3 +136,5 @@ struct HomeView: View {
         }
     }
 }
+
+

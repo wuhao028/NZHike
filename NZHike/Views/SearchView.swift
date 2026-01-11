@@ -9,69 +9,88 @@ import SwiftUI
 
 struct SearchView: View {
     @StateObject private var trackService = TrackService()
+    @StateObject private var hutService = HutService()
     @StateObject private var favoritesManager = FavoritesManager()
     @State private var searchText = ""
+    @State private var selectedTab = 0
     
     var filteredTracks: [Track] {
         trackService.searchTracks(query: searchText)
     }
     
+    var filteredHuts: [Hut] {
+        hutService.searchHuts(query: searchText)
+    }
+    
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                SearchBar(text: $searchText)
+                Picker("Type", selection: $selectedTab) {
+                    Text("Tracks").tag(0)
+                    Text("Huts").tag(1)
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .padding(.horizontal)
+                .padding(.bottom, 8)
+                
+                SearchBar(text: $searchText, placeholder: selectedTab == 0 ? "Search tracks..." : "Search huts...")
                     .padding(.horizontal)
-                    .padding(.top, 8)
                 
                 if searchText.isEmpty {
                     VStack(spacing: 16) {
-                        Image(systemName: "magnifyingglass")
+                        Image(systemName: selectedTab == 0 ? "magnifyingglass" : "house")
                             .font(.system(size: 60))
                             .foregroundColor(.secondary)
                         
-                        Text("Search Tracks")
+                        Text(selectedTab == 0 ? "Search Tracks" : "Search Huts")
                             .font(.title2)
                             .fontWeight(.semibold)
                         
-                        Text("Enter track name, region, or keywords")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding()
-                } else if filteredTracks.isEmpty {
-                    VStack(spacing: 16) {
-                        Image(systemName: "magnifyingglass")
-                            .font(.system(size: 60))
-                            .foregroundColor(.secondary)
-                        
-                        Text("No Results Found")
-                            .font(.title2)
-                            .fontWeight(.semibold)
-                        
-                        Text("Try using different keywords")
+                        Text(selectedTab == 0 ? "Enter track name, region, or keywords" : "Enter hut name or region")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding()
                 } else {
-                    ScrollView {
-                        LazyVStack(spacing: 12) {
-                            ForEach(filteredTracks) { track in
-                                NavigationLink(destination: TrackDetailView(trackId: track.id)) {
-                                    TrackCard(
-                                        track: track,
-                                        isFavorite: favoritesManager.isFavorite(trackId: track.id),
-                                        onFavoriteToggle: {
-                                            favoritesManager.toggleFavorite(track: track)
+                    if selectedTab == 0 {
+                        if filteredTracks.isEmpty {
+                            EmptyStateView()
+                        } else {
+                            ScrollView {
+                                LazyVStack(spacing: 12) {
+                                    ForEach(filteredTracks) { track in
+                                        NavigationLink(destination: TrackDetailView(trackId: track.id)) {
+                                            TrackCard(
+                                                track: track,
+                                                isFavorite: favoritesManager.isFavorite(trackId: track.id),
+                                                onFavoriteToggle: {
+                                                    favoritesManager.toggleFavorite(track: track)
+                                                }
+                                            )
                                         }
-                                    )
+                                        .buttonStyle(PlainButtonStyle())
+                                    }
                                 }
-                                .buttonStyle(PlainButtonStyle())
+                                .padding()
                             }
                         }
-                        .padding()
+                    } else {
+                        if filteredHuts.isEmpty {
+                            EmptyStateView()
+                        } else {
+                            ScrollView {
+                                LazyVStack(spacing: 12) {
+                                    ForEach(filteredHuts) { hut in
+                                        NavigationLink(destination: HutDetailView(hut: hut)) {
+                                            SimpleHutCard(hut: hut)
+                                        }
+                                        .buttonStyle(PlainButtonStyle())
+                                    }
+                                }
+                                .padding()
+                            }
+                        }
                     }
                 }
             }
@@ -81,15 +100,36 @@ struct SearchView: View {
     }
 }
 
+struct EmptyStateView: View {
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 60))
+                .foregroundColor(.secondary)
+            
+            Text("No Results Found")
+                .font(.title2)
+                .fontWeight(.semibold)
+            
+            Text("Try using different keywords")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding()
+    }
+}
+
 struct SearchBar: View {
     @Binding var text: String
+    var placeholder: String = "Search tracks..."
     
     var body: some View {
         HStack {
             Image(systemName: "magnifyingglass")
                 .foregroundColor(.secondary)
             
-            TextField("Search tracks...", text: $text)
+            TextField(placeholder, text: $text)
                 .textFieldStyle(PlainTextFieldStyle())
             
             if !text.isEmpty {

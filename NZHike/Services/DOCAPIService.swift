@@ -13,7 +13,10 @@ class DOCAPIService: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     
-    private let baseURL = "https://api.doc.govt.nz/v1/tracks"
+    private let tracksBaseURL = "https://api.doc.govt.nz/v1/tracks"
+    private let hutsBaseURL = "https://api.doc.govt.nz/v1/huts"
+    
+    @Published var hutDetail: HutDetail?
     
     private var apiKey: String {
         guard let path = Bundle.main.path(forResource: "APIKeys", ofType: "plist"),
@@ -25,10 +28,18 @@ class DOCAPIService: ObservableObject {
     }
     
     func fetchTrackDetail(assetId: String) async {
+        await fetchData(endpoint: "\(tracksBaseURL)/\(assetId)/detail", target: \.trackDetail)
+    }
+    
+    func fetchHutDetail(assetId: String) async {
+        await fetchData(endpoint: "\(hutsBaseURL)/\(assetId)/detail", target: \.hutDetail)
+    }
+    
+    private func fetchData<T: Decodable>(endpoint: String, target: ReferenceWritableKeyPath<DOCAPIService, T?>) async {
         isLoading = true
         errorMessage = nil
         
-        var urlComponents = URLComponents(string: "\(baseURL)/\(assetId)/detail")
+        var urlComponents = URLComponents(string: endpoint)
         urlComponents?.queryItems = [
             URLQueryItem(name: "doc.api.key", value: apiKey)
         ]
@@ -42,6 +53,7 @@ class DOCAPIService: ObservableObject {
         var request = URLRequest(url: url)
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
+        
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             
@@ -62,31 +74,17 @@ class DOCAPIService: ObservableObject {
                 return
             }
             
-            // Debug: print response data
-            if let jsonString = String(data: data, encoding: .utf8) {
-                print("API Response: \(jsonString)")
-            }
-            
             let decoder = JSONDecoder()
             decoder.keyDecodingStrategy = .convertFromSnakeCase
-            trackDetail = try decoder.decode(TrackDetail.self, from: data)
+            let decodedData = try decoder.decode(T.self, from: data)
+            
+            // Assign to the published property
+            // Since we are in an async context but referencing self (Actor/MainActor), we need to be careful.
+            // However, common pattern with published properties in ObservableObject is straight assignment if on MainActor.
+            // The method is async, but the class is @MainActor.
+            self[keyPath: target] = decodedData
             isLoading = false
-        } catch let decodingError as DecodingError {
-            var errorDescription = "Failed to decode API response: "
-            switch decodingError {
-            case .keyNotFound(let key, let context):
-                errorDescription += "Key '\(key.stringValue)' not found. \(context.debugDescription)"
-            case .typeMismatch(let type, let context):
-                errorDescription += "Type mismatch for type \(type). \(context.debugDescription)"
-            case .valueNotFound(let type, let context):
-                errorDescription += "Value not found for type \(type). \(context.debugDescription)"
-            case .dataCorrupted(let context):
-                errorDescription += "Data corrupted. \(context.debugDescription)"
-            @unknown default:
-                errorDescription += "Unknown decoding error"
-            }
-            errorMessage = errorDescription
-            isLoading = false
+            
         } catch {
             errorMessage = "Failed to fetch data: \(error.localizedDescription)"
             isLoading = false
