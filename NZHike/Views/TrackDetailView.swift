@@ -43,112 +43,118 @@ struct TrackDetailView: View {
                                     .font(.title2)
                             }
                         }
-                        
-                        if !track.region.isEmpty {
-                            Text(track.regionString)
-                                .font(.title3)
-                                .foregroundColor(.secondary)
-                        }
-                        
-                        if let description = track.description {
-                            Text(description)
-                                .font(.body)
-                                .foregroundColor(.primary)
-                        }
-                        
-                        VStack(spacing: 12) {
-                            if let difficulty = track.difficulty {
-                                DetailRow(icon: "exclamationmark.triangle", title: "Difficulty", value: difficulty)
-                            }
-                            
-                            if let duration = track.duration {
-                                DetailRow(icon: "clock", title: "Duration", value: duration)
-                            }
-                            
-                            if let distance = track.distance {
-                                DetailRow(icon: "ruler", title: "Distance", value: distance)
-                            }
-                        }
-                        .padding()
-                        .background(Color(.systemGray6))
-                        .cornerRadius(12)
                     }
                     .padding()
                 }
                 
-                // Always try to fetch API details using assetId
-                Divider()
-                    .padding(.horizontal)
-                
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("API Details")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .padding(.horizontal)
-                    
                     if docService.isLoading {
                         HStack {
                             ProgressView()
-                            Text("Loading details from DOC API...")
+                            Text("Loading details from DOC...")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                         }
                         .frame(maxWidth: .infinity)
                         .padding()
-                    } else if let detail = docService.trackDetail {
+                    } else if let track = docService.trackDetail {
                         VStack(alignment: .leading, spacing: 16) {
-                            if !detail.introduction.isEmpty {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Description")
-                                        .font(.headline)
-                                    Text(detail.introduction)
-                                        .font(.body)
-                                }
-                                .padding(.horizontal)
-                            }
-                            
-                            VStack(spacing: 12) {
-                                if !detail.distance.isEmpty {
-                                    DetailRow(icon: "exclamationmark.triangle", title: "Difficulty", value: detail.distance)
-                                }
-                                
-                                if let duration = detail.mtbDuration {
-                                    DetailRow(icon: "clock", title: "Duration", value: duration)
-                                }
-                                
-                                if !detail.distance.isEmpty {
-                                    DetailRow(icon: "ruler", title: "Distance", value: detail.distance)
-                                }
-                                
-                                if !detail.walkDuration.isEmpty {
-                                    DetailRow(icon: "arrow.up.and.down", title: "Elevation", value: detail.walkDuration)
-                                }
-                            }
-                            .padding()
-                            .background(Color(.systemGray6))
-                            .cornerRadius(12)
-                            .padding(.horizontal)
-                            
-                            if !detail.introductionThumbnail.isEmpty {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text("Image")
-                                        .font(.headline)
-                                    
-                                    AsyncImage(url: URL(string: detail.introductionThumbnail)) { image in
-                                        image
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fill)
-                                    } placeholder: {
-                                        ProgressView()
+                                        // image
+                                        AsyncImage(url: URL(string: track.introductionThumbnail ?? "")) { phase in
+                                            switch phase {
+                                            case .success(let image):
+                                                image
+                                                    .resizable()
+                                                    .scaledToFill()
+                                            case .failure(_):
+                                                Color.gray.opacity(0.3)
+                                            case .empty:
+                                                ProgressView()
+                                            @unknown default:
+                                                EmptyView()
+                                            }
+                                        }
+                                        .frame(height: 220)
+                                        .clipped()
+
+
+                                        // name
+                                        Text(track.name)
+                                            .font(.title)
+                                            .bold()
+                                            .padding(.horizontal)
+
+
+                                        // info row (distance / duration / difficulty)
+                                        VStack(alignment: .leading, spacing: 8) {
+
+                                            if !track.distance.isEmpty {
+                                                Label(track.distance, systemImage: "map")
+                                            }
+
+                                            if !track.walkDuration.isEmpty {
+                                                Label(track.walkDuration, systemImage: "clock")
+                                            }
+
+                                            if !track.walkTrackCategory.isEmpty {
+                                                Label(track.walkDuration, systemImage: "figure.walk")
+                                            }
+
+                                        }
+                                        .font(.subheadline)
+                                        .padding(.horizontal)
+
+
+                                        Divider().padding(.horizontal)
+
+
+                                        // Introduction
+                            if !track.introduction.isEmpty {
+                                            Text("Introduction")
+                                                .font(.headline)
+                                                .padding(.horizontal)
+
+                                            Text(track.introduction)
+                                                .foregroundColor(.secondary)
+                                                .padding(.horizontal)
+                                        }
+
+                                        // Activities
+                            if !track.permittedActivities.isEmpty {
+                                            Text("Permitted Activities")
+                                                .font(.headline)
+                                                .padding(.horizontal)
+
+                                            ForEach(track.permittedActivities, id: \.self) { act in
+                                                Text("• \(act)")
+                                                    .padding(.horizontal)
+                                            }
+                                        }
+
+                                        // Dogs
+                            if !track.dogsAllowed.isEmpty {
+                                            Text("Dogs")
+                                                .font(.headline)
+                                                .padding(.horizontal)
+
+                                            Text(track.dogsAllowed)
+                                                .foregroundColor(.secondary)
+                                                .padding(.horizontal)
+                                        }
+
+                                        // Location
+                                        if let region = track.region.first {
+                                            Text("Location")
+                                                .font(.headline)
+                                                .padding(.horizontal)
+
+                                            Text(region)
+                                                .foregroundColor(.secondary)
+                                                .padding(.horizontal)
+                                        }
+
+                                        Spacer(minLength: 30)
                                     }
-                                    .frame(width: 200, height: 150)
-                                    .cornerRadius(8)
-                                    .clipped()
-                                }
-                                .padding(.horizontal)
-                            }
-                            
-                        }
                     } else if let errorMessage = docService.errorMessage {
                         VStack(spacing: 8) {
                             Image(systemName: "exclamationmark.triangle")
