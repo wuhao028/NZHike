@@ -10,6 +10,7 @@ import SwiftUI
 struct HomeView: View {
     @StateObject private var trackService = TrackService()
     @StateObject private var hutService = HutService()
+    @StateObject private var campsiteService = CampsiteService()
     @StateObject private var favoritesManager = FavoritesManager()
     @State private var selectedTab = 0
     
@@ -19,6 +20,7 @@ struct HomeView: View {
                 Picker("Type", selection: $selectedTab) {
                     Text("Tracks").tag(0)
                     Text("Huts").tag(1)
+                    Text("Campsites").tag(2)
                 }
                 .pickerStyle(SegmentedPickerStyle())
                 .padding()
@@ -79,7 +81,7 @@ struct HomeView: View {
                             }
                         }
                     }
-                } else {
+                } else if selectedTab == 1 {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 20) {
                             VStack(alignment: .leading, spacing: 4) {
@@ -121,6 +123,56 @@ struct HomeView: View {
                                     ForEach(hutService.recommendedHuts) { hut in
                                         NavigationLink(destination: HutDetailView(hut: hut)) {
                                             RecommendedHutCard(hut: hut)
+                                        }
+                                        .buttonStyle(PlainButtonStyle())
+                                    }
+                                }
+                                .padding(.horizontal)
+                            }
+                        }
+                    }
+                } else {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 20) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Recommended Campsites")
+                                    .font(.largeTitle)
+                                    .fontWeight(.bold)
+                                
+                                Text("Discover great camping spots")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.horizontal)
+                            .padding(.top)
+                            
+                            if campsiteService.recommendedCampsites.isEmpty {
+                                VStack(spacing: 16) {
+                                    if campsiteService.isLoading {
+                                        ProgressView("Loading campsites...")
+                                    } else {
+                                        Image(systemName: "tent")
+                                            .font(.system(size: 60))
+                                            .foregroundColor(.secondary)
+                                        
+                                        Text("No Recommended Campsites")
+                                            .font(.title2)
+                                            .fontWeight(.semibold)
+                                        
+                                        if let errorMessage = campsiteService.errorMessage {
+                                            Text(errorMessage)
+                                                .font(.caption)
+                                                .foregroundColor(.red)
+                                        }
+                                    }
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                            } else {
+                                LazyVStack(spacing: 16) {
+                                    ForEach(campsiteService.recommendedCampsites) { campsite in
+                                        NavigationLink(destination: CampsiteDetailView(campsite: campsite)) {
+                                            RecommendedCampsiteCard(campsite: campsite)
                                         }
                                         .buttonStyle(PlainButtonStyle())
                                     }

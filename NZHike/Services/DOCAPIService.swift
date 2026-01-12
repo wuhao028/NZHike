@@ -17,6 +17,7 @@ class DOCAPIService: ObservableObject {
     private let hutsBaseURL = "https://api.doc.govt.nz/v1/huts"
     
     @Published var hutDetail: HutDetail?
+    @Published var campsiteDetail: CampsiteDetail?
     
     private var apiKey: String {
         guard let path = Bundle.main.path(forResource: "APIKeys", ofType: "plist"),
@@ -33,6 +34,10 @@ class DOCAPIService: ObservableObject {
     
     func fetchHutDetail(assetId: String) async {
         await fetchData(endpoint: "\(hutsBaseURL)/\(assetId)/detail", target: \.hutDetail)
+    }
+    
+    func fetchCampsiteDetail(assetId: String) async {
+        await fetchData(endpoint: "https://api.doc.govt.nz/v1/campsites/\(assetId)/detail", target: \.campsiteDetail)
     }
     
     private func fetchData<T: Decodable>(endpoint: String, target: ReferenceWritableKeyPath<DOCAPIService, T?>) async {

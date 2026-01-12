@@ -10,6 +10,7 @@ import SwiftUI
 struct SearchView: View {
     @StateObject private var trackService = TrackService()
     @StateObject private var hutService = HutService()
+    @StateObject private var campsiteService = CampsiteService()
     @StateObject private var favoritesManager = FavoritesManager()
     @State private var searchText = ""
     @State private var selectedTab = 0
@@ -22,31 +23,36 @@ struct SearchView: View {
         hutService.searchHuts(query: searchText)
     }
     
+    var filteredCampsites: [Campsite] {
+        campsiteService.searchCampsites(query: searchText)
+    }
+    
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
                 Picker("Type", selection: $selectedTab) {
                     Text("Tracks").tag(0)
                     Text("Huts").tag(1)
+                    Text("Campsites").tag(2)
                 }
                 .pickerStyle(SegmentedPickerStyle())
                 .padding(.horizontal)
                 .padding(.bottom, 8)
                 
-                SearchBar(text: $searchText, placeholder: selectedTab == 0 ? "Search tracks..." : "Search huts...")
+                SearchBar(text: $searchText, placeholder: selectedTab == 0 ? "Search tracks..." : (selectedTab == 1 ? "Search huts..." : "Search campsites..."))
                     .padding(.horizontal)
                 
                 if searchText.isEmpty {
                     VStack(spacing: 16) {
-                        Image(systemName: selectedTab == 0 ? "magnifyingglass" : "house")
+                        Image(systemName: selectedTab == 0 ? "magnifyingglass" : (selectedTab == 1 ? "house" : "tent"))
                             .font(.system(size: 60))
                             .foregroundColor(.secondary)
                         
-                        Text(selectedTab == 0 ? "Search Tracks" : "Search Huts")
+                        Text(selectedTab == 0 ? "Search Tracks" : (selectedTab == 1 ? "Search Huts" : "Search Campsites"))
                             .font(.title2)
                             .fontWeight(.semibold)
                         
-                        Text(selectedTab == 0 ? "Enter track name, region, or keywords" : "Enter hut name or region")
+                        Text(selectedTab == 0 ? "Enter track name, region, or keywords" : (selectedTab == 1 ? "Enter hut name or region" : "Enter campsite name or region"))
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
@@ -75,7 +81,7 @@ struct SearchView: View {
                                 .padding()
                             }
                         }
-                    } else {
+                    } else if selectedTab == 1 {
                         if filteredHuts.isEmpty {
                             EmptyStateView()
                         } else {
@@ -84,6 +90,22 @@ struct SearchView: View {
                                     ForEach(filteredHuts) { hut in
                                         NavigationLink(destination: HutDetailView(hut: hut)) {
                                             SimpleHutCard(hut: hut)
+                                        }
+                                        .buttonStyle(PlainButtonStyle())
+                                    }
+                                }
+                                .padding()
+                            }
+                        }
+                    } else {
+                        if filteredCampsites.isEmpty {
+                            EmptyStateView()
+                        } else {
+                            ScrollView {
+                                LazyVStack(spacing: 12) {
+                                    ForEach(filteredCampsites) { campsite in
+                                        NavigationLink(destination: CampsiteDetailView(campsite: campsite)) {
+                                            SimpleCampsiteCard(campsite: campsite)
                                         }
                                         .buttonStyle(PlainButtonStyle())
                                     }

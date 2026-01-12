@@ -1,19 +1,17 @@
 //
-//  RecommendedHutCard.swift
+//  RecommendedCampsiteCard.swift
 //  NZHike
 //
-//  Created by wuhao028 on 09/01/2026.
+//  Created by wuhao028 on 12/01/2026.
 //
 
 import SwiftUI
 
-struct RecommendedHutCard: View {
-    let hut: Hut
+struct RecommendedCampsiteCard: View {
+    let campsite: Campsite
     
     private var imageName: String {
-        // Simple mapping or lowercased name
-        // Huts don't have "image_name" property in JSON yet, so derive from name
-        hut.name.lowercased()
+        campsite.name.lowercased()
             .replacingOccurrences(of: " ", with: "_")
             .replacingOccurrences(of: "'", with: "")
     }
@@ -32,7 +30,7 @@ struct RecommendedHutCard: View {
                         .fill(Color.gray.opacity(0.1))
                         .frame(height: 150)
                         .overlay(
-                            Image(systemName: "house.fill")
+                            Image(systemName: "tent.fill")
                                 .font(.largeTitle)
                                 .foregroundColor(.secondary)
                         )
@@ -40,13 +38,13 @@ struct RecommendedHutCard: View {
             }
             
             VStack(alignment: .leading, spacing: 8) {
-                Text(hut.name)
+                Text(campsite.name)
                     .font(.title3)
                     .fontWeight(.bold)
                     .lineLimit(1)
                     .foregroundColor(.primary)
                 
-                if let region = hut.region {
+                if let region = campsite.region {
                     HStack {
                         Image(systemName: "map")
                         Text(region)
@@ -56,7 +54,7 @@ struct RecommendedHutCard: View {
                 }
                 
                 HStack {
-                    StatusBadge(status: hut.status)
+                    StatusBadge(status: campsite.status)
                     Spacer()
                 }
             }
