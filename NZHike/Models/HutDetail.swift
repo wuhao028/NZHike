@@ -23,6 +23,7 @@ struct HutDetail: Codable {
     let y: Double
     
     // Additional fields that might be present
-    let hutCategory: [String]?
+    let hutCategory: String?
     let bookable: Bool?
+    let proximityToRoadEnd: String?
 }

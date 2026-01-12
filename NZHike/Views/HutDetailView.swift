@@ -14,15 +14,44 @@ struct HutDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                // Header Image Placeholder
-                Rectangle()
-                    .fill(Color.gray.opacity(0.2))
-                    .frame(height: 200)
-                    .overlay(
-                        Image(systemName: "house.fill")
-                            .font(.system(size: 60))
-                            .foregroundColor(.secondary)
-                    )
+                // Header Image
+                if let detail = apiService.hutDetail, 
+                   let thumb = detail.introductionThumbnail, 
+                   let url = URL(string: thumb) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .empty:
+                            Rectangle()
+                                .fill(Color.gray.opacity(0.2))
+                                .overlay(ProgressView())
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        case .failure:
+                            Rectangle()
+                                .fill(Color.gray.opacity(0.2))
+                                .overlay(
+                                    Image(systemName: "house.fill")
+                                        .font(.system(size: 60))
+                                        .foregroundColor(.secondary)
+                                )
+                        @unknown default:
+                            EmptyView()
+                        }
+                    }
+                    .frame(height: 240)
+                    .clipped()
+                } else {
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.2))
+                        .frame(height: 200)
+                        .overlay(
+                            Image(systemName: "house.fill")
+                                .font(.system(size: 60))
+                                .foregroundColor(.secondary)
+                        )
+                }
                 
                 VStack(alignment: .leading, spacing: 16) {
                     Text(hut.name)
@@ -61,6 +90,31 @@ struct HutDetailView: View {
                                 Text("\(bunks) Bunks")
                             }
                             .font(.subheadline)
+                        }
+                        
+                        if let category = detail.hutCategory {
+                            HStack {
+                                Image(systemName: "tag.fill")
+                                Text("Category: \(category)")
+                            }
+                            .font(.subheadline)
+                        }
+                        
+                        if let proximity = detail.proximityToRoadEnd {
+                            HStack {
+                                Image(systemName: "figure.walk")
+                                Text("Proximity: \(proximity)")
+                            }
+                            .font(.subheadline)
+                        }
+                        
+                        if let bookable = detail.bookable {
+                            HStack {
+                                Image(systemName: bookable ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                Text(bookable ? "Bookable" : "Not Bookable")
+                            }
+                            .font(.subheadline)
+                            .foregroundColor(bookable ? .green : .secondary)
                         }
                         
                         if let facilities = detail.facilities, !facilities.isEmpty {

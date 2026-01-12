@@ -24,6 +24,10 @@ struct CampsiteDetail: Codable {
     let y: Double
     
     // Additional fields that might be present
-    let campsiteCategory: [String]?
+    let campsiteCategory: String?
     let bookable: Bool?
+    let landscape: [String]?
+    let access: [String]?
+    let activities: [String]?
+    let dogsAllowed: String?
 }

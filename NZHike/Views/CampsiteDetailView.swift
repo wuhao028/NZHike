@@ -14,15 +14,44 @@ struct CampsiteDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                // Header Image Placeholder
-                Rectangle()
-                    .fill(Color.gray.opacity(0.2))
-                    .frame(height: 200)
-                    .overlay(
-                        Image(systemName: "tent.fill")
-                            .font(.system(size: 60))
-                            .foregroundColor(.secondary)
-                    )
+                // Header Image
+                if let detail = apiService.campsiteDetail, 
+                   let thumb = detail.introductionThumbnail, 
+                   let url = URL(string: thumb) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .empty:
+                            Rectangle()
+                                .fill(Color.gray.opacity(0.2))
+                                .overlay(ProgressView())
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        case .failure:
+                            Rectangle()
+                                .fill(Color.gray.opacity(0.2))
+                                .overlay(
+                                    Image(systemName: "tent.fill")
+                                        .font(.system(size: 60))
+                                        .foregroundColor(.secondary)
+                                )
+                        @unknown default:
+                            EmptyView()
+                        }
+                    }
+                    .frame(height: 240)
+                    .clipped()
+                } else {
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.2))
+                        .frame(height: 200)
+                        .overlay(
+                            Image(systemName: "tent.fill")
+                                .font(.system(size: 60))
+                                .foregroundColor(.secondary)
+                        )
+                }
                 
                 VStack(alignment: .leading, spacing: 16) {
                     Text(campsite.name)
@@ -70,6 +99,78 @@ struct CampsiteDetailView: View {
                                 Text("\(unpowered) Unpowered Sites")
                             }
                             .font(.subheadline)
+                        }
+                        
+                        if let bookable = detail.bookable {
+                            HStack {
+                                Image(systemName: bookable ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                Text(bookable ? "Bookable" : "Not Bookable")
+                            }
+                            .font(.subheadline)
+                            .foregroundColor(bookable ? .green : .secondary)
+                        }
+                        
+                        if let category = detail.campsiteCategory {
+                            HStack {
+                                Image(systemName: "tag.fill")
+                                Text("Category: \(category)")
+                            }
+                            .font(.subheadline)
+                        }
+                        
+                        if let landscapes = detail.landscape, !landscapes.isEmpty {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Landscape")
+                                    .font(.headline)
+                                    .padding(.top, 4)
+                                
+                                FlowLayout(spacing: 8) {
+                                    ForEach(landscapes, id: \.self) { item in
+                                        ChipView(text: item, color: .green)
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if let activities = detail.activities, !activities.isEmpty {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Activities")
+                                    .font(.headline)
+                                    .padding(.top, 4)
+                                
+                                FlowLayout(spacing: 8) {
+                                    ForEach(activities, id: \.self) { item in
+                                        ChipView(text: item, color: .blue)
+                                    }
+                                }
+                            }
+                        }
+                        
+                        if let access = detail.access, !access.isEmpty {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Access")
+                                    .font(.headline)
+                                    .padding(.top, 4)
+                                
+                                ForEach(access, id: \.self) { item in
+                                    Text("• \(item)")
+                                        .font(.subheadline)
+                                }
+                            }
+                        }
+                        
+                        if let dogs = detail.dogsAllowed {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Dogs Allowed")
+                                    .font(.headline)
+                                    .padding(.top, 4)
+                                
+                                // Simple HTML-stripping or just display text
+                                // For now, simple text display. A real app might parse HTML link.
+                                Text(dogs.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression, range: nil))
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
                         }
                         
                         if let facilities = detail.facilities, !facilities.isEmpty {

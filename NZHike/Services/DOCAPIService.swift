@@ -14,7 +14,7 @@ class DOCAPIService: ObservableObject {
     @Published var errorMessage: String?
     
     private let tracksBaseURL = "https://api.doc.govt.nz/v1/tracks"
-    private let hutsBaseURL = "https://api.doc.govt.nz/v1/huts"
+    private let hutsBaseURL = "https://api.doc.govt.nz/v2/huts"
     
     @Published var hutDetail: HutDetail?
     @Published var campsiteDetail: CampsiteDetail?
@@ -37,7 +37,7 @@ class DOCAPIService: ObservableObject {
     }
     
     func fetchCampsiteDetail(assetId: String) async {
-        await fetchData(endpoint: "https://api.doc.govt.nz/v1/campsites/\(assetId)/detail", target: \.campsiteDetail)
+        await fetchData(endpoint: "https://api.doc.govt.nz/v2/campsites/\(assetId)/detail", target: \.campsiteDetail)
     }
     
     private func fetchData<T: Decodable>(endpoint: String, target: ReferenceWritableKeyPath<DOCAPIService, T?>) async {
