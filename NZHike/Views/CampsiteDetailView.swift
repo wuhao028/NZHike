@@ -205,8 +205,20 @@ struct CampsiteDetailView: View {
         }
         .navigationTitle(campsite.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: {
+                    favoritesManager.toggleFavorite(campsite: campsite)
+                }) {
+                    Image(systemName: favoritesManager.isFavorite(campsiteId: campsite.id) ? "heart.fill" : "heart")
+                        .foregroundColor(favoritesManager.isFavorite(campsiteId: campsite.id) ? .red : .primary)
+                }
+            }
+        }
         .task {
             await apiService.fetchCampsiteDetail(assetId: String(campsite.assetId))
         }
     }
+    
+    @EnvironmentObject var favoritesManager: FavoritesManager
 }

@@ -8,10 +8,10 @@
 import SwiftUI
 
 struct SearchView: View {
-    @StateObject private var trackService = TrackService()
-    @StateObject private var hutService = HutService()
-    @StateObject private var campsiteService = CampsiteService()
-    @StateObject private var favoritesManager = FavoritesManager()
+    @EnvironmentObject var trackService: TrackService
+    @EnvironmentObject var hutService: HutService
+    @EnvironmentObject var campsiteService: CampsiteService
+    @EnvironmentObject var favoritesManager: FavoritesManager
     @State private var searchText = ""
     @State private var selectedTab = 0
     

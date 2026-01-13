@@ -149,10 +149,22 @@ struct HutDetailView: View {
         }
         .navigationTitle(hut.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: {
+                    favoritesManager.toggleFavorite(hut: hut)
+                }) {
+                    Image(systemName: favoritesManager.isFavorite(hutId: hut.id) ? "heart.fill" : "heart")
+                        .foregroundColor(favoritesManager.isFavorite(hutId: hut.id) ? .red : .primary)
+                }
+            }
+        }
         .task {
             await apiService.fetchHutDetail(assetId: String(hut.assetId))
         }
     }
+    
+    @EnvironmentObject var favoritesManager: FavoritesManager
 }
 
 struct StatusBadge: View {

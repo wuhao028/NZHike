@@ -11,8 +11,8 @@ struct TrackDetailView: View {
     let trackId: String // This is the assetId
     
     @StateObject private var docService = DOCAPIService()
-    @StateObject private var favoritesManager = FavoritesManager()
-    @StateObject private var trackService = TrackService()
+    @EnvironmentObject var trackService: TrackService
+    @EnvironmentObject var favoritesManager: FavoritesManager
     @Environment(\.dismiss) var dismiss
     
     var track: Track? {
