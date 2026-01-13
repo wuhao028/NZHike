@@ -41,6 +41,7 @@ struct SearchView: View {
                 
                 SearchBar(text: $searchText, placeholder: selectedTab == 0 ? "Search tracks..." : (selectedTab == 1 ? "Search huts..." : "Search campsites..."))
                     .padding(.horizontal)
+                    .background(.ultraThinMaterial) // Restoring the glass effect as requested
                 
                 if searchText.isEmpty {
                     VStack(spacing: 16) {
@@ -89,7 +90,13 @@ struct SearchView: View {
                                 LazyVStack(spacing: 12) {
                                     ForEach(filteredHuts) { hut in
                                         NavigationLink(destination: HutDetailView(hut: hut)) {
-                                            SimpleHutCard(hut: hut)
+                                            SimpleHutCard(
+                                                hut: hut,
+                                                isFavorite: favoritesManager.isFavorite(hutId: hut.id),
+                                                onFavoriteToggle: {
+                                                    favoritesManager.toggleFavorite(hut: hut)
+                                                }
+                                            )
                                         }
                                         .buttonStyle(PlainButtonStyle())
                                     }
@@ -105,7 +112,13 @@ struct SearchView: View {
                                 LazyVStack(spacing: 12) {
                                     ForEach(filteredCampsites) { campsite in
                                         NavigationLink(destination: CampsiteDetailView(campsite: campsite)) {
-                                            SimpleCampsiteCard(campsite: campsite)
+                                            SimpleCampsiteCard(
+                                                campsite: campsite,
+                                                isFavorite: favoritesManager.isFavorite(campsiteId: campsite.id),
+                                                onFavoriteToggle: {
+                                                    favoritesManager.toggleFavorite(campsite: campsite)
+                                                }
+                                            )
                                         }
                                         .buttonStyle(PlainButtonStyle())
                                     }
@@ -115,9 +128,12 @@ struct SearchView: View {
                         }
                     }
                 }
-            }
+            } // End of VStack
             .navigationTitle("Search")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                favoritesManager.loadFavorites()
+            }
         }
     }
 }

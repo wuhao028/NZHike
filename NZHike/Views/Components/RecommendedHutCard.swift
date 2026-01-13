@@ -9,6 +9,8 @@ import SwiftUI
 
 struct RecommendedHutCard: View {
     let hut: Hut
+    var isFavorite: Bool = false
+    var onFavoriteToggle: (() -> Void)? = nil
     
     private var imageName: String {
         // Simple mapping or lowercased name
@@ -36,6 +38,18 @@ struct RecommendedHutCard: View {
                                 .font(.largeTitle)
                                 .foregroundColor(.secondary)
                         )
+                }
+                
+                if let onFavoriteToggle = onFavoriteToggle {
+                    Button(action: onFavoriteToggle) {
+                        Image(systemName: isFavorite ? "heart.fill" : "heart")
+                            .foregroundColor(isFavorite ? .red : .white)
+                            .font(.system(size: 18))
+                            .padding(8)
+                            .background(.ultraThinMaterial, in: Circle())
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .padding(8)
                 }
             }
             

@@ -9,6 +9,8 @@ import SwiftUI
 
 struct SimpleCampsiteCard: View {
     let campsite: Campsite
+    var isFavorite: Bool = false
+    var onFavoriteToggle: (() -> Void)? = nil
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -27,7 +29,19 @@ struct SimpleCampsiteCard: View {
                 
                 Spacer()
                 
-                StatusBadge(status: campsite.status)
+                VStack(alignment: .trailing, spacing: 12) {
+                    if let onFavoriteToggle = onFavoriteToggle {
+                        Button(action: onFavoriteToggle) {
+                            Image(systemName: isFavorite ? "heart.fill" : "heart")
+                                .foregroundColor(isFavorite ? .red : .gray)
+                                .font(.system(size: 20))
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .padding(.top, 4)
+                    }
+                    
+                    StatusBadge(status: campsite.status)
+                }
             }
         }
         .padding()

@@ -127,7 +127,7 @@ struct RecommendedTrackCard: View {
                 
                 Button(action: onFavoriteToggle) {
                     Image(systemName: isFavorite ? "heart.fill" : "heart")
-                        .foregroundColor(.white)
+                        .foregroundColor(isFavorite ? .red : .white)
                         .padding(8)
                         .background(Color.black.opacity(0.5))
                         .clipShape(Circle())

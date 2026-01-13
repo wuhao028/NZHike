@@ -23,7 +23,8 @@ struct HomeView: View {
                     Text("Campsites").tag(2)
                 }
                 .pickerStyle(SegmentedPickerStyle())
-                .padding()
+                .padding(.horizontal)
+                .padding(.bottom, 8)
                 
                 if selectedTab == 0 {
                     ScrollView {
@@ -122,7 +123,13 @@ struct HomeView: View {
                                 LazyVStack(spacing: 16) {
                                     ForEach(hutService.recommendedHuts) { hut in
                                         NavigationLink(destination: HutDetailView(hut: hut)) {
-                                            RecommendedHutCard(hut: hut)
+                                            RecommendedHutCard(
+                                                hut: hut,
+                                                isFavorite: favoritesManager.isFavorite(hutId: hut.id),
+                                                onFavoriteToggle: {
+                                                    favoritesManager.toggleFavorite(hut: hut)
+                                                }
+                                            )
                                         }
                                         .buttonStyle(PlainButtonStyle())
                                     }
@@ -172,7 +179,13 @@ struct HomeView: View {
                                 LazyVStack(spacing: 16) {
                                     ForEach(campsiteService.recommendedCampsites) { campsite in
                                         NavigationLink(destination: CampsiteDetailView(campsite: campsite)) {
-                                            RecommendedCampsiteCard(campsite: campsite)
+                                            RecommendedCampsiteCard(
+                                                campsite: campsite,
+                                                isFavorite: favoritesManager.isFavorite(campsiteId: campsite.id),
+                                                onFavoriteToggle: {
+                                                    favoritesManager.toggleFavorite(campsite: campsite)
+                                                }
+                                            )
                                         }
                                         .buttonStyle(PlainButtonStyle())
                                     }
@@ -185,6 +198,9 @@ struct HomeView: View {
             }
             .navigationTitle("Home")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                favoritesManager.loadFavorites()
+            }
         }
     }
 }
