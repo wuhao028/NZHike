@@ -51,6 +51,16 @@ struct RecommendedHutCard: View {
                     .buttonStyle(PlainButtonStyle())
                     .padding(8)
                 }
+                
+                // Weather Chip Overlay
+                VStack {
+                    Spacer()
+                    HStack {
+                        WeatherChip(weather: WeatherService.shared.getWeather(for: hut.region))
+                            .padding(8)
+                        Spacer()
+                    }
+                }
             }
             
             VStack(alignment: .leading, spacing: 8) {

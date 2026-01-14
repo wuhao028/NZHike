@@ -49,6 +49,16 @@ struct RecommendedCampsiteCard: View {
                     .buttonStyle(PlainButtonStyle())
                     .padding(8)
                 }
+                
+                // Weather Chip Overlay
+                VStack {
+                    Spacer()
+                    HStack {
+                        WeatherChip(weather: WeatherService.shared.getWeather(for: campsite.region))
+                            .padding(8)
+                        Spacer()
+                    }
+                }
             }
             
             VStack(alignment: .leading, spacing: 8) {

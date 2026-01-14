@@ -19,6 +19,7 @@ struct ContentView: View {
                     .environmentObject(appState.hutService)
                     .environmentObject(appState.campsiteService)
                     .environmentObject(appState.favoritesManager)
+                    .preferredColorScheme(appState.currentTheme.colorScheme)
                     .transition(.opacity)
             } else {
                 LoadingView()

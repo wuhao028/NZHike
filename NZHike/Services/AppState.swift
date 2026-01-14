@@ -15,6 +15,26 @@ class AppState: ObservableObject {
     @Published var favoritesManager = FavoritesManager()
     
     @Published var isDataLoaded = false
+    @Published var currentTheme: AppTheme = AppTheme(rawValue: UserDefaults.standard.string(forKey: "appTheme") ?? "system") ?? .system
+    
+    enum AppTheme: String, CaseIterable {
+        case system = "system"
+        case light = "light"
+        case dark = "dark"
+        
+        var colorScheme: ColorScheme? {
+            switch self {
+            case .system: return nil
+            case .light: return .light
+            case .dark: return .dark
+            }
+        }
+    }
+    
+    func setTheme(_ theme: AppTheme) {
+        currentTheme = theme
+        UserDefaults.standard.set(theme.rawValue, forKey: "appTheme")
+    }
     
     init() {
         checkLoadingStatus()

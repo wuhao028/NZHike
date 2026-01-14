@@ -191,6 +191,10 @@ struct CampsiteDetailView: View {
                     
                     Divider()
                     
+                    WeatherSectionView(region: campsite.region)
+                    
+                    Divider()
+                    
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Location")
                             .font(.headline)

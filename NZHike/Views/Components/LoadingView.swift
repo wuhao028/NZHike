@@ -37,7 +37,7 @@ struct LoadingView: View {
                 }
                 
                 VStack(spacing: 8) {
-                    Text("NZ Hike")
+                    Text("NZHikes")
                         .font(.system(size: 40, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                     

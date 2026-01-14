@@ -12,6 +12,7 @@ struct HomeView: View {
     @EnvironmentObject var hutService: HutService
     @EnvironmentObject var campsiteService: CampsiteService
     @EnvironmentObject var favoritesManager: FavoritesManager
+    @EnvironmentObject var appState: AppState
     @State private var selectedTab = 0
     
     var body: some View {
@@ -29,40 +30,23 @@ struct HomeView: View {
                 if selectedTab == 0 {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 20) {
+                            WeatherHeaderView()
+                                .padding(.top)
+                                .padding(.horizontal)
+                            
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Recommended Tracks")
-                                    .font(.largeTitle)
+                                    .font(.system(.largeTitle, design: .rounded))
                                     .fontWeight(.bold)
                                 
-                                Text("Explore New Zealand's most beautiful hiking trails")
+                                Text("Explore New Zealand's trails")
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                             }
                             .padding(.horizontal)
-                            .padding(.top)
                             
                             if trackService.recommendedTracks.isEmpty {
-                                VStack(spacing: 16) {
-                                    if trackService.isLoading {
-                                        ProgressView("Loading tracks...")
-                                    } else {
-                                        Image(systemName: "mountain.2")
-                                            .font(.system(size: 60))
-                                            .foregroundColor(.secondary)
-                                        
-                                        Text("No Recommended Tracks")
-                                            .font(.title2)
-                                            .fontWeight(.semibold)
-                                        
-                                        if let errorMessage = trackService.errorMessage {
-                                            Text(errorMessage)
-                                                .font(.caption)
-                                                .foregroundColor(.red)
-                                        }
-                                    }
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding()
+                                emptyTracksView
                             } else {
                                 LazyVStack(spacing: 16) {
                                     ForEach(trackService.recommendedTracks) { track in
@@ -78,47 +62,28 @@ struct HomeView: View {
                                         .buttonStyle(PlainButtonStyle())
                                     }
                                 }
-                                .padding(.horizontal)
+                                .padding(.horizontal, 16)
+                                .padding(.bottom, 20)
                             }
                         }
                     }
+                    .background(Color(.systemGroupedBackground))
                 } else if selectedTab == 1 {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 20) {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Recommended Huts")
-                                    .font(.largeTitle)
+                                    .font(.system(.largeTitle, design: .rounded))
                                     .fontWeight(.bold)
                                 
-                                Text("Stay in New Zealand's iconic backcountry huts")
+                                Text("Stay in NZ backcountry huts")
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                             }
                             .padding(.horizontal)
-                            .padding(.top)
                             
                             if hutService.recommendedHuts.isEmpty {
-                                VStack(spacing: 16) {
-                                    if hutService.isLoading {
-                                        ProgressView("Loading huts...")
-                                    } else {
-                                        Image(systemName: "house")
-                                            .font(.system(size: 60))
-                                            .foregroundColor(.secondary)
-                                        
-                                        Text("No Recommended Huts")
-                                            .font(.title2)
-                                            .fontWeight(.semibold)
-                                        
-                                        if let errorMessage = hutService.errorMessage {
-                                            Text(errorMessage)
-                                                .font(.caption)
-                                                .foregroundColor(.red)
-                                        }
-                                    }
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding()
+                                emptyHutsView
                             } else {
                                 LazyVStack(spacing: 16) {
                                     ForEach(hutService.recommendedHuts) { hut in
@@ -134,16 +99,18 @@ struct HomeView: View {
                                         .buttonStyle(PlainButtonStyle())
                                     }
                                 }
-                                .padding(.horizontal)
+                                .padding(.horizontal, 16)
+                                .padding(.bottom, 20)
                             }
                         }
                     }
+                    .background(Color(.systemGroupedBackground))
                 } else {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 20) {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Recommended Campsites")
-                                    .font(.largeTitle)
+                                    .font(.system(.largeTitle, design: .rounded))
                                     .fontWeight(.bold)
                                 
                                 Text("Discover great camping spots")
@@ -151,30 +118,9 @@ struct HomeView: View {
                                     .foregroundColor(.secondary)
                             }
                             .padding(.horizontal)
-                            .padding(.top)
                             
                             if campsiteService.recommendedCampsites.isEmpty {
-                                VStack(spacing: 16) {
-                                    if campsiteService.isLoading {
-                                        ProgressView("Loading campsites...")
-                                    } else {
-                                        Image(systemName: "tent")
-                                            .font(.system(size: 60))
-                                            .foregroundColor(.secondary)
-                                        
-                                        Text("No Recommended Campsites")
-                                            .font(.title2)
-                                            .fontWeight(.semibold)
-                                        
-                                        if let errorMessage = campsiteService.errorMessage {
-                                            Text(errorMessage)
-                                                .font(.caption)
-                                                .foregroundColor(.red)
-                                        }
-                                    }
-                                }
-                                .frame(maxWidth: .infinity)
-                                .padding()
+                                emptyCampsitesView
                             } else {
                                 LazyVStack(spacing: 16) {
                                     ForEach(campsiteService.recommendedCampsites) { campsite in
@@ -190,10 +136,12 @@ struct HomeView: View {
                                         .buttonStyle(PlainButtonStyle())
                                     }
                                 }
-                                .padding(.horizontal)
+                                .padding(.horizontal, 16)
+                                .padding(.bottom, 20)
                             }
                         }
                     }
+                    .background(Color(.systemGroupedBackground))
                 }
             }
             .navigationTitle("Home")
@@ -203,6 +151,71 @@ struct HomeView: View {
             }
         }
     }
+    
+    // Extracted views to simplify
+    private var emptyTracksView: some View {
+        VStack(spacing: 16) {
+            if trackService.isLoading {
+                ProgressView("Loading tracks...")
+            } else {
+                Image(systemName: "mountain.2")
+                    .font(.system(size: 60))
+                    .foregroundColor(.secondary)
+                Text("No Recommended Tracks")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                if let errorMessage = trackService.errorMessage {
+                    Text(errorMessage)
+                        .font(.caption)
+                        .foregroundColor(.red)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding()
+    }
+    
+    private var emptyHutsView: some View {
+        VStack(spacing: 16) {
+            if hutService.isLoading {
+                ProgressView("Loading huts...")
+            } else {
+                Image(systemName: "house")
+                    .font(.system(size: 60))
+                    .foregroundColor(.secondary)
+                Text("No Recommended Huts")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                if let errorMessage = hutService.errorMessage {
+                    Text(errorMessage)
+                        .font(.caption)
+                        .foregroundColor(.red)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding()
+    }
+    
+    private var emptyCampsitesView: some View {
+        VStack(spacing: 16) {
+            if campsiteService.isLoading {
+                ProgressView("Loading campsites...")
+            } else {
+                Image(systemName: "tent")
+                    .font(.system(size: 60))
+                    .foregroundColor(.secondary)
+                Text("No Recommended Campsites")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                if let errorMessage = campsiteService.errorMessage {
+                    Text(errorMessage)
+                        .font(.caption)
+                        .foregroundColor(.red)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding()
+    }
 }
-
-

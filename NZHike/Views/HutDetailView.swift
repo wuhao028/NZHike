@@ -135,6 +135,10 @@ struct HutDetailView: View {
                     
                     Divider()
                     
+                    WeatherSectionView(region: hut.region)
+                    
+                    Divider()
+                    
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Location")
                             .font(.headline)

@@ -133,6 +133,16 @@ struct RecommendedTrackCard: View {
                         .clipShape(Circle())
                 }
                 .padding(12)
+                
+                // Weather Chip Overlay
+                VStack {
+                    Spacer()
+                    HStack {
+                        WeatherChip(weather: WeatherService.shared.getWeather(for: track.region.first))
+                            .padding(12)
+                        Spacer()
+                    }
+                }
             }
             
             VStack(alignment: .leading, spacing: 8) {

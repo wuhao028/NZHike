@@ -72,59 +72,114 @@ struct FavoritesMapView: View {
         return items
     }
     
+    @StateObject private var locationManager = LocationManager()
     @State private var selectedItem: FavoriteMapItem?
     
     var body: some View {
-        Map(coordinateRegion: $region, annotationItems: annotationItems) { item in
-            MapAnnotation(coordinate: item.coordinate) {
-                VStack {
-                    ZStack {
-                        Circle()
-                            .fill(colorForType(item.type))
-                            .frame(width: 30, height: 30)
-                            .shadow(radius: 2)
+        ZStack {
+            Map(coordinateRegion: $region, showsUserLocation: true, annotationItems: annotationItems) { item in
+                MapAnnotation(coordinate: item.coordinate) {
+                    VStack {
+                        ZStack {
+                            Circle()
+                                .fill(colorForType(item.type))
+                                .frame(width: 30, height: 30)
+                                .shadow(radius: 2)
+                            
+                            Image(systemName: iconForType(item.type))
+                                .foregroundColor(.white)
+                                .font(.system(size: 14, weight: .bold))
+                        }
                         
-                        Image(systemName: iconForType(item.type))
-                            .foregroundColor(.white)
-                            .font(.system(size: 14, weight: .bold))
-                    }
-                    
-                    if selectedItem?.id == item.id {
-                        Text(item.name)
-                            .font(.caption2)
-                            .padding(4)
-                            .background(Color(.systemBackground).opacity(0.8))
-                            .cornerRadius(4)
-                            .fixedSize()
-                    }
-                }
-                .onTapGesture {
-                    withAnimation {
                         if selectedItem?.id == item.id {
-                            selectedItem = nil
-                        } else {
-                            selectedItem = item
+                            Text(item.name)
+                                .font(.caption2)
+                                .padding(4)
+                                .background(Color(.systemBackground).opacity(0.8))
+                                .cornerRadius(4)
+                                .fixedSize()
+                        }
+                    }
+                    .onTapGesture {
+                        withAnimation {
+                            if selectedItem?.id == item.id {
+                                selectedItem = nil
+                            } else {
+                                selectedItem = item
+                            }
                         }
                     }
                 }
             }
-        }
-        .overlay(
+            
+            // Map Controls
             VStack {
+                HStack {
+                    Spacer()
+                    VStack(spacing: 12) {
+                        // Current Location Button
+                        Button(action: {
+                            if let userLoc = locationManager.location?.coordinate {
+                                withAnimation {
+                                    region.center = userLoc
+                                    region.span = MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+                                }
+                            } else {
+                                locationManager.requestLocation()
+                            }
+                        }) {
+                            Image(systemName: "location.fill")
+                                .padding(10)
+                                .background(Color(.systemBackground))
+                                .clipShape(Circle())
+                                .shadow(radius: 4)
+                        }
+                        
+                        // Zoom Controls
+                        VStack(spacing: 0) {
+                            Button(action: { zoom(by: 0.5) }) {
+                                Image(systemName: "plus")
+                                    .padding(10)
+                                    .frame(width: 44, height: 44)
+                            }
+                            
+                            Divider()
+                                .frame(width: 30)
+                            
+                            Button(action: { zoom(by: 2.0) }) {
+                                Image(systemName: "minus")
+                                    .padding(10)
+                                    .frame(width: 44, height: 44)
+                            }
+                        }
+                        .background(Color(.systemBackground))
+                        .cornerRadius(8)
+                        .shadow(radius: 4)
+                    }
+                    .padding()
+                }
                 Spacer()
+                
                 if let selected = selectedItem {
                     FavoritePopupCard(item: selected)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                         .padding()
                 }
-            },
-            alignment: .bottom
-        )
+            }
+        }
         .onAppear {
             setInitialRegion()
+            locationManager.requestLocation()
         }
         .onChange(of: selectedCategory) { _ in
             setInitialRegion()
+        }
+    }
+    
+    private func zoom(by factor: Double) {
+        withAnimation {
+            region.span.latitudeDelta *= factor
+            region.span.longitudeDelta *= factor
         }
     }
     

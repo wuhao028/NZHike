@@ -133,6 +133,10 @@ struct TrackDetailView: View {
                         
                         Divider()
                         
+                        WeatherSectionView(region: detail.region.first)
+                        
+                        Divider()
+                        
                         if !detail.introduction.isEmpty {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("About")
