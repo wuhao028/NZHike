@@ -10,11 +10,18 @@ import SwiftUI
 struct FavoritesView: View {
     @EnvironmentObject var favoritesManager: FavoritesManager
     @State private var selectedCategory: FavoriteCategory = .all
+    @State private var showMapView = false
+    
+    private var hasFavorites: Bool {
+        !favoritesManager.favoriteTracks.isEmpty ||
+        !favoritesManager.favoriteHuts.isEmpty ||
+        !favoritesManager.favoriteCampsites.isEmpty
+    }
     
     var body: some View {
         NavigationView {
             Group {
-                if favoritesManager.favoriteTracks.isEmpty {
+                if !hasFavorites {
                     VStack(spacing: 16) {
                         Image(systemName: "heart.slash")
                             .font(.system(size: 60))
@@ -32,7 +39,7 @@ struct FavoritesView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding()
                 } else {
-                    VStack {
+                    VStack(spacing: 0) {
                         Picker("Category", selection: $selectedCategory) {
                             ForEach(FavoriteCategory.allCases, id: \.self) { category in
                                 Text(category.rawValue).tag(category)
@@ -40,77 +47,97 @@ struct FavoritesView: View {
                         }
                         .pickerStyle(SegmentedPickerStyle())
                         .padding(.horizontal)
-                        .padding(.bottom, 8)
+                        .padding(.vertical, 8)
+                        .background(Color(.systemBackground))
                         
-                        ScrollView {
-                            LazyVStack(spacing: 16) {
-                                // Tracks
-                                if shouldShow(.tracks) && !favoritesManager.favoriteTracks.isEmpty {
-                                    if selectedCategory == .all {
-                                        SectionHeader(title: "Tracks")
+                        if showMapView {
+                            FavoritesMapView(selectedCategory: $selectedCategory)
+                                .transition(.opacity)
+                        } else {
+                            ScrollView {
+                                LazyVStack(spacing: 16) {
+                                    // Tracks
+                                    if shouldShow(.tracks) && !favoritesManager.favoriteTracks.isEmpty {
+                                        if selectedCategory == .all {
+                                            SectionHeader(title: "Tracks")
+                                        }
+                                        
+                                        ForEach(favoritesManager.favoriteTracks) { track in
+                                            NavigationLink(destination: TrackDetailView(trackId: track.id)) {
+                                                TrackCard(
+                                                    track: track,
+                                                    isFavorite: true,
+                                                    onFavoriteToggle: {
+                                                        favoritesManager.toggleFavorite(track: track)
+                                                    }
+                                                )
+                                            }
+                                            .buttonStyle(PlainButtonStyle())
+                                        }
                                     }
                                     
-                                    ForEach(favoritesManager.favoriteTracks) { track in
-                                        NavigationLink(destination: TrackDetailView(trackId: track.id)) {
-                                            TrackCard(
-                                                track: track,
-                                                isFavorite: true,
-                                                onFavoriteToggle: {
-                                                    favoritesManager.toggleFavorite(track: track)
-                                                }
-                                            )
+                                    // Huts
+                                    if shouldShow(.huts) && !favoritesManager.favoriteHuts.isEmpty {
+                                        if selectedCategory == .all {
+                                            SectionHeader(title: "Huts")
                                         }
-                                        .buttonStyle(PlainButtonStyle())
-                                    }
-                                }
-                                
-                                // Huts
-                                if shouldShow(.huts) && !favoritesManager.favoriteHuts.isEmpty {
-                                    if selectedCategory == .all {
-                                        SectionHeader(title: "Huts")
+                                        
+                                        ForEach(favoritesManager.favoriteHuts) { hut in
+                                            NavigationLink(destination: HutDetailView(hut: hut)) {
+                                                SimpleHutCard(
+                                                    hut: hut,
+                                                    isFavorite: true,
+                                                    onFavoriteToggle: {
+                                                        favoritesManager.toggleFavorite(hut: hut)
+                                                    }
+                                                )
+                                            }
+                                            .buttonStyle(PlainButtonStyle())
+                                        }
                                     }
                                     
-                                    ForEach(favoritesManager.favoriteHuts) { hut in
-                                        NavigationLink(destination: HutDetailView(hut: hut)) {
-                                            SimpleHutCard(
-                                                hut: hut,
-                                                isFavorite: true,
-                                                onFavoriteToggle: {
-                                                    favoritesManager.toggleFavorite(hut: hut)
-                                                }
-                                            )
+                                    // Campsites
+                                    if shouldShow(.campsites) && !favoritesManager.favoriteCampsites.isEmpty {
+                                        if selectedCategory == .all {
+                                            SectionHeader(title: "Campsites")
                                         }
-                                        .buttonStyle(PlainButtonStyle())
+                                        
+                                        ForEach(favoritesManager.favoriteCampsites) { campsite in
+                                            NavigationLink(destination: CampsiteDetailView(campsite: campsite)) {
+                                                SimpleCampsiteCard(
+                                                    campsite: campsite,
+                                                    isFavorite: true,
+                                                    onFavoriteToggle: {
+                                                        favoritesManager.toggleFavorite(campsite: campsite)
+                                                    }
+                                                )
+                                            }
+                                            .buttonStyle(PlainButtonStyle())
+                                        }
                                     }
                                 }
-                                
-                                // Campsites
-                                if shouldShow(.campsites) && !favoritesManager.favoriteCampsites.isEmpty {
-                                    if selectedCategory == .all {
-                                        SectionHeader(title: "Campsites")
-                                    }
-                                    
-                                    ForEach(favoritesManager.favoriteCampsites) { campsite in
-                                        NavigationLink(destination: CampsiteDetailView(campsite: campsite)) {
-                                            SimpleCampsiteCard(
-                                                campsite: campsite,
-                                                isFavorite: true,
-                                                onFavoriteToggle: {
-                                                    favoritesManager.toggleFavorite(campsite: campsite)
-                                                }
-                                            )
-                                        }
-                                        .buttonStyle(PlainButtonStyle())
-                                    }
-                                }
+                                .padding()
                             }
-                            .padding()
+                            .transition(.opacity)
                         }
                     }
                 }
             }
             .navigationTitle("Favorites")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    if hasFavorites {
+                        Button(action: {
+                            withAnimation(.easeInOut) {
+                                showMapView.toggle()
+                            }
+                        }) {
+                            Image(systemName: showMapView ? "list.bullet" : "map")
+                        }
+                    }
+                }
+            }
             .onAppear {
                 favoritesManager.loadFavorites()
             }
