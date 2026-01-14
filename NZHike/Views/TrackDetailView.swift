@@ -133,7 +133,6 @@ struct TrackDetailView: View {
                         
                         Divider()
                         
-                        // Introduction
                         if !detail.introduction.isEmpty {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("About")
@@ -145,7 +144,28 @@ struct TrackDetailView: View {
                                     .foregroundColor(.secondary)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
+                            
+                            Divider()
                         }
+                        
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Location")
+                                .font(.title3)
+                                .fontWeight(.bold)
+                            
+                            LocationMapView(easting: detail.x, northing: detail.y, title: detail.name)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Coordinates (NZTM)")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text("E: \(Int(detail.x)) N: \(Int(detail.y))")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        
+                        Divider()
                         
                         // Activities
                         if !detail.permittedActivities.isEmpty {
