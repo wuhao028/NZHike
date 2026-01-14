@@ -12,17 +12,27 @@ import Combine
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
     @Published var location: CLLocation?
-    @Published var authorizationStatus: CLAuthorizationStatus?
+    @Published var authorizationStatus: CLAuthorizationStatus
     
     override init() {
+        self.authorizationStatus = locationManager.authorizationStatus
         super.init()
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        authorizationStatus = locationManager.authorizationStatus
+        
+        // Start updates if already authorized
+        if authorizationStatus == .authorizedWhenInUse || authorizationStatus == .authorizedAlways {
+            locationManager.startUpdatingLocation()
+        }
     }
     
     func requestLocation() {
-        locationManager.requestWhenInUseAuthorization()
+        let status = locationManager.authorizationStatus
+        if status == .notDetermined {
+            locationManager.requestWhenInUseAuthorization()
+        } else if status == .authorizedWhenInUse || status == .authorizedAlways {
+            locationManager.startUpdatingLocation()
+        }
     }
     
     func startUpdatingLocation() {
@@ -34,13 +44,17 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        location = locations.last
+        DispatchQueue.main.async {
+            self.location = locations.last
+        }
     }
     
     func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
-        authorizationStatus = status
-        if status == .authorizedWhenInUse || status == .authorizedAlways {
-            locationManager.startUpdatingLocation()
+        DispatchQueue.main.async {
+            self.authorizationStatus = status
+            if status == .authorizedWhenInUse || status == .authorizedAlways {
+                self.locationManager.startUpdatingLocation()
+            }
         }
     }
     

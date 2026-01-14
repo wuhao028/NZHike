@@ -33,6 +33,7 @@ struct LocationMapView: View {
         Map(initialPosition: .region(region)) {
             Marker(title, coordinate: coordinate)
                 .tint(.green)
+            UserAnnotation()
         }
         .frame(height: 200)
         .cornerRadius(12)
