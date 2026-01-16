@@ -8,13 +8,19 @@
 import SwiftUI
 
 struct WeatherHeaderView: View {
-    let weather = WeatherService.shared.getCurrentWeather()
+    let weather: WeatherInfo
+    let title: String
     @Environment(\.colorScheme) var colorScheme
+    
+    init(weather: WeatherInfo = WeatherService.shared.getCurrentWeather(), title: String = "Today's Weather") {
+        self.weather = weather
+        self.title = title
+    }
     
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Today's Weather")
+                Text(title)
                     .font(.caption)
                     .fontWeight(.bold)
                     .foregroundColor(.secondary)
@@ -52,7 +58,6 @@ struct WeatherHeaderView: View {
                 .fill(Color(.secondarySystemBackground))
                 .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
         )
-        .padding(.horizontal)
     }
 }
 

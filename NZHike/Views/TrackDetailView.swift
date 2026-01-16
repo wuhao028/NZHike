@@ -109,6 +109,7 @@ struct TrackDetailView: View {
                             .foregroundColor(.secondary)
                         }
                     }
+                    .padding(.horizontal)
                     
                     if let detail = docService.trackDetail {
                         // Stats Grid
@@ -130,12 +131,14 @@ struct TrackDetailView: View {
                                 StatBox(icon: "pawprint", title: "Dogs", value: dogs.contains("No dogs") ? "No Dogs" : "Check Rules")
                             }
                         }
+                        .padding(.horizontal)
                         
                         Divider()
                         
                         WeatherSectionView(region: detail.region.first)
                         
                         Divider()
+                            .padding(.horizontal)
                         
                         if !detail.introduction.isEmpty {
                             VStack(alignment: .leading, spacing: 8) {
@@ -148,8 +151,10 @@ struct TrackDetailView: View {
                                     .foregroundColor(.secondary)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
+                            .padding(.horizontal)
                             
                             Divider()
+                                .padding(.horizontal)
                         }
                         
                         VStack(alignment: .leading, spacing: 12) {
@@ -168,8 +173,10 @@ struct TrackDetailView: View {
                                     .foregroundColor(.secondary)
                             }
                         }
+                        .padding(.horizontal)
                         
                         Divider()
+                            .padding(.horizontal)
                         
                         // Activities
                         if !detail.permittedActivities.isEmpty {
@@ -184,6 +191,7 @@ struct TrackDetailView: View {
                                     }
                                 }
                             }
+                            .padding(.horizontal)
                         }
                         
                         // More Details
@@ -211,6 +219,7 @@ struct TrackDetailView: View {
                                 }
                             }
                         }
+                        .padding(.horizontal)
                         
                     } else if let errorMessage = docService.errorMessage {
                         VStack(spacing: 12) {
@@ -235,8 +244,8 @@ struct TrackDetailView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 40)
                     }
+
                 }
-                .padding()
             }
         }
         .edgesIgnoringSafeArea(.top)

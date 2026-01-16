@@ -54,90 +54,105 @@ struct HutDetailView: View {
                 }
                 
                 VStack(alignment: .leading, spacing: 16) {
-                    Text(hut.name)
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                    
-                    if let region = hut.region {
+                    Group {
+                        Text(hut.name)
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                        
+                        if let region = hut.region {
+                            HStack {
+                                Image(systemName: "map")
+                                Text(region)
+                                    .font(.headline)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        
                         HStack {
-                            Image(systemName: "map")
-                            Text(region)
-                                .font(.headline)
-                                .foregroundColor(.secondary)
+                            StatusBadge(status: hut.status)
+                            Spacer()
                         }
                     }
-                    
-                    HStack {
-                        StatusBadge(status: hut.status)
-                        Spacer()
-                    }
+                    .padding(.horizontal)
                     
                     if apiService.isLoading {
                         ProgressView("Loading details...")
+                            .frame(maxWidth: .infinity)
+                            .padding()
                     } else if let detail = apiService.hutDetail {
                         Divider()
+                            .padding(.horizontal)
                         
-                        if let intro = detail.introduction {
-                            Text("About")
-                                .font(.headline)
-                            Text(intro)
-                                .font(.body)
-                        }
-                        
-                        if let bunks = detail.numberOfBunks {
-                            HStack {
-                                Image(systemName: "bed.double.fill")
-                                Text("\(bunks) Bunks")
+                        VStack(alignment: .leading, spacing: 12) {
+                            if let intro = detail.introduction {
+                                Text("About")
+                                    .font(.headline)
+                                Text(intro)
+                                    .font(.body)
                             }
-                            .font(.subheadline)
-                        }
-                        
-                        if let category = detail.hutCategory {
-                            HStack {
-                                Image(systemName: "tag.fill")
-                                Text("Category: \(category)")
+                            
+                            if let bunks = detail.numberOfBunks {
+                                HStack {
+                                    Image(systemName: "bed.double.fill")
+                                    Text("\(bunks) Bunks")
+                                }
+                                .font(.subheadline)
                             }
-                            .font(.subheadline)
-                        }
-                        
-                        if let proximity = detail.proximityToRoadEnd {
-                            HStack {
-                                Image(systemName: "figure.walk")
-                                Text("Proximity: \(proximity)")
+                            
+                            if let category = detail.hutCategory {
+                                HStack {
+                                    Image(systemName: "tag.fill")
+                                    Text("Category: \(category)")
+                                }
+                                .font(.subheadline)
                             }
-                            .font(.subheadline)
-                        }
-                        
-                        if let bookable = detail.bookable {
-                            HStack {
-                                Image(systemName: bookable ? "checkmark.circle.fill" : "xmark.circle.fill")
-                                Text(bookable ? "Bookable" : "Not Bookable")
+                            
+                            if let proximity = detail.proximityToRoadEnd {
+                                HStack {
+                                    Image(systemName: "figure.walk")
+                                    Text("Proximity: \(proximity)")
+                                }
+                                .font(.subheadline)
                             }
-                            .font(.subheadline)
-                            .foregroundColor(bookable ? .green : .secondary)
+                            
+                            if let bookable = detail.bookable {
+                                HStack {
+                                    Image(systemName: bookable ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                    Text(bookable ? "Bookable" : "Not Bookable")
+                                }
+                                .font(.subheadline)
+                                .foregroundColor(bookable ? .green : .secondary)
+                            }
                         }
+                        .padding(.horizontal)
                         
                         if let facilities = detail.facilities, !facilities.isEmpty {
-                            Text("Facilities")
-                                .font(.headline)
-                                .padding(.top, 4)
-                            
-                            ForEach(facilities, id: \.self) { facility in
-                                Text("• \(facility)")
-                                    .font(.subheadline)
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Facilities")
+                                    .font(.headline)
+                                    .padding(.top, 4)
+                                
+                                ForEach(facilities, id: \.self) { facility in
+                                    Text("• \(facility)")
+                                        .font(.subheadline)
+                                }
                             }
+                            .padding(.horizontal)
                         }
                     } else if let error = apiService.errorMessage {
                         Text("Failed to load details: \(error)")
                             .font(.caption)
                             .foregroundColor(.red)
+                            .padding(.horizontal)
                     }
                     
                     Divider()
+                        .padding(.horizontal)
                     
                     WeatherSectionView(region: hut.region)
                     
                     Divider()
+                        .padding(.horizontal)
                     
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Location")
@@ -154,8 +169,8 @@ struct HutDetailView: View {
                                 .foregroundColor(.secondary)
                         }
                     }
+                    .padding(.horizontal)
                 }
-                .padding()
             }
         }
         .navigationTitle(hut.name)

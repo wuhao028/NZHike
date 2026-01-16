@@ -40,8 +40,10 @@ struct SearchView: View {
                 .padding(.bottom, 8)
                 
                 SearchBar(text: $searchText, placeholder: selectedTab == 0 ? "Search tracks..." : (selectedTab == 1 ? "Search huts..." : "Search campsites..."))
+                    .padding(.vertical, 8)
                     .padding(.horizontal)
-                    .background(.ultraThinMaterial) // Restoring the glass effect as requested
+                    .background(Color(.systemBackground).opacity(0.8))
+                    .background(.ultraThinMaterial)
                 
                 if searchText.isEmpty {
                     VStack(spacing: 16) {
@@ -179,6 +181,6 @@ struct SearchBar: View {
         }
         .padding(12)
         .background(Color(.systemGray6))
-        .cornerRadius(10)
+        .cornerRadius(12)
     }
 }

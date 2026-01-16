@@ -54,146 +54,159 @@ struct CampsiteDetailView: View {
                 }
                 
                 VStack(alignment: .leading, spacing: 16) {
-                    Text(campsite.name)
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                    
-                    if let region = campsite.region {
-                        HStack {
-                            Image(systemName: "map")
-                            Text(region)
-                                .font(.headline)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    
-                    HStack {
-                        StatusBadge(status: campsite.status)
-                        Spacer()
-                    }
-                    
-                    if apiService.isLoading {
-                        ProgressView("Loading details...")
-                    } else if let detail = apiService.campsiteDetail {
-                        Divider()
+                    Group {
+                        Text(campsite.name)
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
                         
-                        if let intro = detail.introduction {
-                            Text("About")
-                                .font(.headline)
-                            Text(intro)
-                                .font(.body)
-                        }
-                        
-                        // Display powered/unpowered sites if available
-                        if let powered = detail.numberOfPoweredSites, powered > 0 {
+                        if let region = campsite.region {
                             HStack {
-                                Image(systemName: "bolt.fill")
-                                Text("\(powered) Powered Sites")
-                            }
-                            .font(.subheadline)
-                        }
-                        
-                        if let unpowered = detail.numberOfUnpoweredSites, unpowered > 0 {
-                            HStack {
-                                Image(systemName: "bolt.slash.fill")
-                                Text("\(unpowered) Unpowered Sites")
-                            }
-                            .font(.subheadline)
-                        }
-                        
-                        if let bookable = detail.bookable {
-                            HStack {
-                                Image(systemName: bookable ? "checkmark.circle.fill" : "xmark.circle.fill")
-                                Text(bookable ? "Bookable" : "Not Bookable")
-                            }
-                            .font(.subheadline)
-                            .foregroundColor(bookable ? .green : .secondary)
-                        }
-                        
-                        if let category = detail.campsiteCategory {
-                            HStack {
-                                Image(systemName: "tag.fill")
-                                Text("Category: \(category)")
-                            }
-                            .font(.subheadline)
-                        }
-                        
-                        if let landscapes = detail.landscape, !landscapes.isEmpty {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Landscape")
+                                Image(systemName: "map")
+                                Text(region)
                                     .font(.headline)
-                                    .padding(.top, 4)
-                                
-                                FlowLayout(spacing: 8) {
-                                    ForEach(landscapes, id: \.self) { item in
-                                        ChipView(text: item, color: .green)
-                                    }
-                                }
-                            }
-                        }
-                        
-                        if let activities = detail.activities, !activities.isEmpty {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Activities")
-                                    .font(.headline)
-                                    .padding(.top, 4)
-                                
-                                FlowLayout(spacing: 8) {
-                                    ForEach(activities, id: \.self) { item in
-                                        ChipView(text: item, color: .blue)
-                                    }
-                                }
-                            }
-                        }
-                        
-                        if let access = detail.access, !access.isEmpty {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Access")
-                                    .font(.headline)
-                                    .padding(.top, 4)
-                                
-                                ForEach(access, id: \.self) { item in
-                                    Text("• \(item)")
-                                        .font(.subheadline)
-                                }
-                            }
-                        }
-                        
-                        if let dogs = detail.dogsAllowed {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Dogs Allowed")
-                                    .font(.headline)
-                                    .padding(.top, 4)
-                                
-                                // Simple HTML-stripping or just display text
-                                // For now, simple text display. A real app might parse HTML link.
-                                Text(dogs.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression, range: nil))
-                                    .font(.subheadline)
                                     .foregroundColor(.secondary)
                             }
                         }
                         
-                        if let facilities = detail.facilities, !facilities.isEmpty {
-                            Text("Facilities")
-                                .font(.headline)
-                                .padding(.top, 4)
+                        HStack {
+                            StatusBadge(status: campsite.status)
+                            Spacer()
+                        }
+                    }
+                    .padding(.horizontal)
+                    
+                    if apiService.isLoading {
+                        ProgressView("Loading details...")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                    } else if let detail = apiService.campsiteDetail {
+                        Divider()
+                            .padding(.horizontal)
+                        
+                        VStack(alignment: .leading, spacing: 12) {
+                            if let intro = detail.introduction {
+                                Text("About")
+                                    .font(.headline)
+                                Text(intro)
+                                    .font(.body)
+                            }
                             
-                            ForEach(facilities, id: \.self) { facility in
-                                Text("• \(facility)")
-                                    .font(.subheadline)
+                            // Display powered/unpowered sites if available
+                            if let powered = detail.numberOfPoweredSites, powered > 0 {
+                                HStack {
+                                    Image(systemName: "bolt.fill")
+                                    Text("\(powered) Powered Sites")
+                                }
+                                .font(.subheadline)
+                            }
+                            
+                            if let unpowered = detail.numberOfUnpoweredSites, unpowered > 0 {
+                                HStack {
+                                    Image(systemName: "bolt.slash.fill")
+                                    Text("\(unpowered) Unpowered Sites")
+                                }
+                                .font(.subheadline)
+                            }
+                            
+                            if let bookable = detail.bookable {
+                                HStack {
+                                    Image(systemName: bookable ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                    Text(bookable ? "Bookable" : "Not Bookable")
+                                }
+                                .font(.subheadline)
+                                .foregroundColor(bookable ? .green : .secondary)
+                            }
+                            
+                            if let category = detail.campsiteCategory {
+                                HStack {
+                                    Image(systemName: "tag.fill")
+                                    Text("Category: \(category)")
+                                }
+                                .font(.subheadline)
                             }
                         }
+                        .padding(.horizontal)
+                        
+                        VStack(alignment: .leading, spacing: 12) {
+                            if let landscapes = detail.landscape, !landscapes.isEmpty {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Landscape")
+                                        .font(.headline)
+                                        .padding(.top, 4)
+                                    
+                                    FlowLayout(spacing: 8) {
+                                        ForEach(landscapes, id: \.self) { item in
+                                            ChipView(text: item, color: .green)
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            if let activities = detail.activities, !activities.isEmpty {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Activities")
+                                        .font(.headline)
+                                        .padding(.top, 4)
+                                    
+                                    FlowLayout(spacing: 8) {
+                                        ForEach(activities, id: \.self) { item in
+                                            ChipView(text: item, color: .blue)
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            if let access = detail.access, !access.isEmpty {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Access")
+                                        .font(.headline)
+                                        .padding(.top, 4)
+                                    
+                                    ForEach(access, id: \.self) { item in
+                                        Text("• \(item)")
+                                            .font(.subheadline)
+                                    }
+                                }
+                            }
+                            
+                            if let dogs = detail.dogsAllowed {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Dogs Allowed")
+                                        .font(.headline)
+                                        .padding(.top, 4)
+                                    
+                                    Text(dogs.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression, range: nil))
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                            
+                            if let facilities = detail.facilities, !facilities.isEmpty {
+                                Text("Facilities")
+                                    .font(.headline)
+                                    .padding(.top, 4)
+                                
+                                ForEach(facilities, id: \.self) { facility in
+                                    Text("• \(facility)")
+                                        .font(.subheadline)
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
                     } else if let error = apiService.errorMessage {
                         Text("Failed to load details: \(error)")
                             .font(.caption)
                             .foregroundColor(.red)
+                            .padding(.horizontal)
                     }
                     
                     Divider()
+                        .padding(.horizontal)
                     
                     WeatherSectionView(region: campsite.region)
                     
                     Divider()
+                        .padding(.horizontal)
                     
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Location")
@@ -210,8 +223,9 @@ struct CampsiteDetailView: View {
                                 .foregroundColor(.secondary)
                         }
                     }
+                    .padding(.horizontal)
+
                 }
-                .padding()
             }
         }
         .navigationTitle(campsite.name)
