@@ -157,26 +157,32 @@ struct TrackDetailView: View {
                                 .padding(.horizontal)
                         }
                         
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Location")
-                                .font(.title3)
-                                .fontWeight(.bold)
-                            
-                            LocationMapView(easting: detail.x, northing: detail.y, title: detail.name)
-                            
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text("Coordinates (NZTM)")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Text("E: \(Int(detail.x)) N: \(Int(detail.y))")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                        .padding(.horizontal)
+                        let mapX = (track?.x ?? 0) != 0 ? track?.x : ((detail.x != 0) ? detail.x : nil)
+                        let mapY = (track?.y ?? 0) != 0 ? track?.y : ((detail.y != 0) ? detail.y : nil)
+                        let mapTitle = track?.name ?? detail.name
                         
-                        Divider()
+                        if let x = mapX, let y = mapY {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Location")
+                                    .font(.title3)
+                                    .fontWeight(.bold)
+                                
+                                LocationMapView(easting: x, northing: y, title: mapTitle)
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Coordinates (NZTM)")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Text("E: \(Int(x)) N: \(Int(y))")
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
                             .padding(.horizontal)
+                            
+                            Divider()
+                                .padding(.horizontal)
+                        }
                         
                         // Activities
                         if !detail.permittedActivities.isEmpty {

@@ -208,22 +208,24 @@ struct CampsiteDetailView: View {
                     Divider()
                         .padding(.horizontal)
                     
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Location")
-                            .font(.headline)
-                        
-                        LocationMapView(easting: campsite.x, northing: campsite.y, title: campsite.name)
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Coordinates (NZTM)")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text("E: \(Int(campsite.x)) N: \(Int(campsite.y))")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
+                    if campsite.x != 0 && campsite.y != 0 {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Location")
+                                .font(.headline)
+                            
+                            LocationMapView(easting: campsite.x, northing: campsite.y, title: campsite.name)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Coordinates (NZTM)")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text("E: \(Int(campsite.x)) N: \(Int(campsite.y))")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
                         }
+                        .padding(.horizontal)
                     }
-                    .padding(.horizontal)
 
                 }
             }

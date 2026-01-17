@@ -154,22 +154,24 @@ struct HutDetailView: View {
                     Divider()
                         .padding(.horizontal)
                     
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Location")
-                            .font(.headline)
-                        
-                        LocationMapView(easting: hut.x, northing: hut.y, title: hut.name)
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Coordinates (NZTM)")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text("E: \(Int(hut.x)) N: \(Int(hut.y))")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
+                    if hut.x != 0 && hut.y != 0 {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Location")
+                                .font(.headline)
+                            
+                            LocationMapView(easting: hut.x, northing: hut.y, title: hut.name)
+                            
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Coordinates (NZTM)")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text("E: \(Int(hut.x)) N: \(Int(hut.y))")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
                         }
+                        .padding(.horizontal)
                     }
-                    .padding(.horizontal)
                 }
             }
         }

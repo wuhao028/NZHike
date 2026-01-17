@@ -19,10 +19,10 @@ class TrackService: ObservableObject {
     private var recommendedTrackIds: Set<String> = []
     
     init() {
-        // Load recommended tracks from local JSON file only
-        loadRecommendedTracks()
-        // Load all tracks from database (for search functionality)
+        // Load all tracks from database first (for search functionality and coordinate matching)
         loadTracksFromDatabase()
+        // Load recommended tracks from local JSON file
+        loadRecommendedTracks()
     }
     
     private func loadRecommendedTracks() {
@@ -47,8 +47,11 @@ class TrackService: ObservableObject {
             return
         }
         
+        // Populate recommended IDs
+        self.recommendedTrackIds = Set(recommendedTracksData.compactMap { $0.id })
+        
         // Convert RecommendedTrack to Track
-        recommendedTracks = recommendedTracksData.map { recommendedTrack in
+        let basicRecommended = recommendedTracksData.map { recommendedTrack in
             var track = Track(
                 assetId: recommendedTrack.id,
                 name: recommendedTrack.name,
@@ -65,7 +68,34 @@ class TrackService: ObservableObject {
             return track
         }
         
+        // Try to enrich recommended tracks with coordinates if we have them in allTracks
+        recommendedTracks = basicRecommended.map { recTrack in
+            if let fullTrack = allTracks.first(where: { $0.assetId == recTrack.assetId }) {
+                var updated = recTrack
+                updated.x = fullTrack.x
+                updated.y = fullTrack.y
+                return updated
+            }
+            return recTrack
+        }
+        
         isLoading = false
+    }
+
+    func updateRecommendedTracksCoordinates() {
+        recommendedTracks = recommendedTracks.map { recTrack in
+            // Try matching by ID first, then by name
+            if let fullTrack = allTracks.first(where: { $0.assetId == recTrack.assetId }) ??
+                               allTracks.first(where: { $0.name.lowercased() == recTrack.name.lowercased() }) {
+                var updated = recTrack
+                if updated.x == 0 { updated.x = fullTrack.x }
+                if updated.y == 0 { updated.y = fullTrack.y }
+                if updated.line.isEmpty { updated.line = fullTrack.line }
+                return updated
+            }
+            return recTrack
+        }
+        objectWillChange.send()
     }
     
     func loadTracksFromDatabase() {
@@ -80,6 +110,7 @@ class TrackService: ObservableObject {
                 loadTracksFromJSON()
             }
             // Note: We don't update recommendedTracks here because they come from local JSON
+            updateRecommendedTracksCoordinates()
         } catch {
             errorMessage = "Failed to load tracks from database: \(error.localizedDescription)"
             // If database load fails, try JSON
@@ -153,6 +184,7 @@ class TrackService: ObservableObject {
         do {
             try context.save()
             loadTracksFromDatabase()
+            updateRecommendedTracksCoordinates()
         } catch {
             errorMessage = "Failed to save tracks to database: \(error.localizedDescription)"
         }
