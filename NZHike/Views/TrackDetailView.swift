@@ -8,166 +8,137 @@
 import SwiftUI
 
 struct TrackDetailView: View {
-    let trackId: String // This is the assetId
-    
-    @StateObject private var docService = DOCAPIService()
+    @EnvironmentObject var apiService: DOCAPIService
     @EnvironmentObject var trackService: TrackService
     @EnvironmentObject var favoritesManager: FavoritesManager
+    
+    let trackId: String
+    
+    var body: some View {
+        TrackDetailContentView(
+            trackId: trackId,
+            apiService: apiService,
+            trackService: trackService,
+            favoritesManager: favoritesManager
+        )
+    }
+}
+
+struct TrackDetailContentView: View {
+    @StateObject private var viewModel: TrackDetailViewModel
     @Environment(\.dismiss) var dismiss
     
-    var track: Track? {
-        // First try to find in allTracks, then in recommendedTracks, then in favorites
-        trackService.allTracks.first(where: { $0.id == trackId }) ??
-        trackService.recommendedTracks.first(where: { $0.id == trackId }) ??
-        favoritesManager.favoriteTracks.first(where: { $0.id == trackId })
+    init(trackId: String, apiService: DOCAPIService, trackService: TrackService, favoritesManager: FavoritesManager) {
+        _viewModel = StateObject(wrappedValue: TrackDetailViewModel(
+            trackId: trackId,
+            apiService: apiService,
+            trackService: trackService,
+            favoritesManager: favoritesManager
+        ))
     }
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 // Header Image
-                if let track = docService.trackDetail {
-                    AsyncImage(url: URL(string: track.introductionThumbnail)) { phase in
-                        switch phase {
-                        case .success(let image):
+                ZStack(alignment: .top) {
+                    if let imageUrl = viewModel.trackDetail?.introductionThumbnail, let url = URL(string: imageUrl) {
+                        AsyncImage(url: url) { image in
                             image
                                 .resizable()
                                 .aspectRatio(contentMode: .fill)
-                        case .failure(_):
+                                .frame(height: 250)
+                                .clipped()
+                        } placeholder: {
                             Rectangle()
                                 .fill(Color.gray.opacity(0.2))
-                                .overlay(
-                                    Image(systemName: "mountain.2.fill")
-                                        .font(.system(size: 60))
-                                        .foregroundColor(.secondary)
-                                )
-                        case .empty:
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.2))
-                                .overlay(ProgressView())
-                        @unknown default:
-                            EmptyView()
+                                .frame(height: 250)
                         }
+                    } else if let track = viewModel.track {
+                        Image(getImageName(for: track.name))
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(height: 250)
+                            .clipped()
+                    } else {
+                        Rectangle()
+                            .fill(Color.gray.opacity(0.2))
+                            .frame(height: 250)
                     }
-                    .frame(height: 250)
-                    .clipped()
-                } else if docService.isLoading {
-                    Rectangle()
-                        .fill(Color.gray.opacity(0.2))
-                        .frame(height: 250)
-                        .overlay(ProgressView())
-                } else {
-                    // Fallback for when we only have basic track info or error
-                     Rectangle()
-                        .fill(Color.gray.opacity(0.2))
-                        .frame(height: 250)
-                        .overlay(
-                            Image(systemName: "mountain.2.fill")
-                                .font(.system(size: 60))
-                                .foregroundColor(.secondary)
-                        )
-                }
-                
-                VStack(alignment: .leading, spacing: 20) {
-                    // Title and Basic Info
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack(alignment: .top) {
-                            Text(track?.name ?? "Unknown Track")
-                                .font(.largeTitle)
-                                .fontWeight(.bold)
-                                .fixedSize(horizontal: false, vertical: true)
-                            
-                            Spacer()
-                            
-                            if let track = track {
-                                Button(action: {
-                                    favoritesManager.toggleFavorite(track: track)
-                                }) {
-                                    Image(systemName: favoritesManager.isFavorite(trackId: track.id) ? "heart.fill" : "heart")
-                                        .foregroundColor(favoritesManager.isFavorite(trackId: track.id) ? .red : .gray)
-                                        .font(.title2)
-                                        .padding(8)
-                                        .background(Color(.systemGray6))
-                                        .clipShape(Circle())
-                                }
-                            }
+                    
+                    // Top Bar
+                    HStack {
+                        Button(action: { dismiss() }) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 18, weight: .semibold))
+                                .padding(12)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Circle())
+                                .foregroundColor(.primary)
                         }
                         
-                        if let detail = docService.trackDetail, !detail.region.isEmpty {
-                            HStack {
-                                Image(systemName: "map")
-                                Text(detail.region.joined(separator: ", "))
-                            }
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        } else if let track = track {
-                             HStack {
-                                Image(systemName: "map")
-                                Text(track.regionString)
-                            }
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+                        Spacer()
+                        
+                        Button(action: { viewModel.toggleFavorite() }) {
+                            Image(systemName: viewModel.isFavorite ? "heart.fill" : "heart")
+                                .font(.system(size: 18, weight: .semibold))
+                                .padding(12)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Circle())
+                                .foregroundColor(viewModel.isFavorite ? .red : .primary)
                         }
                     }
                     .padding(.horizontal)
-                    
-                    if let detail = docService.trackDetail {
-                        // Stats Grid
-                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                            if !detail.distance.isEmpty {
-                                StatBox(icon: "ruler", title: "Distance", value: detail.distance)
-                            }
+                    .padding(.top, 50) // Manual top padding for safe area since we use ignoresSafeArea
+                }
+                
+                if viewModel.isLoading {
+                    ProgressView("Loading details...")
+                        .frame(maxWidth: .infinity, minHeight: 200)
+                } else if let detail = viewModel.trackDetail {
+                    VStack(alignment: .leading, spacing: 16) {
+                        // Title and Info
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(detail.name)
+                                .font(.system(.title, design: .rounded))
+                                .fontWeight(.bold)
                             
-                            if !detail.walkDuration.isEmpty {
-                                StatBox(icon: "clock", title: "Duration", value: detail.walkDuration)
+                            HStack(spacing: 12) {
+                                Label(detail.walkDuration, systemImage: "clock")
+                                Label(detail.distance, systemImage: "figure.walk")
                             }
-                            
-                            if !detail.walkTrackCategory.isEmpty {
-                                StatBox(icon: "figure.walk", title: "Difficulty", value: detail.walkTrackCategory.first ?? "Unknown")
-                            }
-                            
-                            if let dogs = detail.dogsAllowed.isEmpty ? nil : detail.dogsAllowed {
-                                // Shorten description for box if really long, or just use icon
-                                StatBox(icon: "pawprint", title: "Dogs", value: dogs.contains("No dogs") ? "No Dogs" : "Check Rules")
-                            }
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
                         }
                         .padding(.horizontal)
                         
                         Divider()
+                            .padding(.horizontal)
                         
-                        WeatherSectionView(region: detail.region.first)
+                        // Introduction
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Introduction")
+                                .font(.title3)
+                                .fontWeight(.bold)
+                            
+                            Text(detail.introduction.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression))
+                                .font(.body)
+                                .foregroundColor(.primary)
+                                .lineSpacing(4)
+                        }
+                        .padding(.horizontal)
                         
                         Divider()
                             .padding(.horizontal)
                         
-                        if !detail.introduction.isEmpty {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("About")
-                                    .font(.title3)
-                                    .fontWeight(.bold)
-                                
-                                Text(detail.introduction)
-                                    .font(.body)
-                                    .foregroundColor(.secondary)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                            .padding(.horizontal)
-                            
-                            Divider()
-                                .padding(.horizontal)
-                        }
-                        
-                        let mapX = (track?.x ?? 0) != 0 ? track?.x : ((detail.x != 0) ? detail.x : nil)
-                        let mapY = (track?.y ?? 0) != 0 ? track?.y : ((detail.y != 0) ? detail.y : nil)
-                        let mapTitle = track?.name ?? detail.name
-                        
-                        if let x = mapX, let y = mapY {
+                        // Location
+                        if let x = viewModel.mapX, let y = viewModel.mapY {
                             VStack(alignment: .leading, spacing: 12) {
                                 Text("Location")
                                     .font(.title3)
                                     .fontWeight(.bold)
                                 
-                                LocationMapView(easting: x, northing: y, title: mapTitle)
+                                LocationMapView(easting: x, northing: y, title: viewModel.mapTitle)
                                 
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Coordinates (NZTM)")
@@ -186,135 +157,61 @@ struct TrackDetailView: View {
                         
                         // Activities
                         if !detail.permittedActivities.isEmpty {
-                            VStack(alignment: .leading, spacing: 8) {
+                            VStack(alignment: .leading, spacing: 12) {
                                 Text("Permitted Activities")
                                     .font(.title3)
                                     .fontWeight(.bold)
                                 
                                 FlowLayout(spacing: 8) {
                                     ForEach(detail.permittedActivities, id: \.self) { activity in
-                                        ChipView(text: activity, color: .blue)
+                                        Text(activity)
+                                            .font(.caption)
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 5)
+                                            .background(Color.green.opacity(0.1))
+                                            .foregroundColor(.green)
+                                            .cornerRadius(8)
                                     }
                                 }
                             }
                             .padding(.horizontal)
                         }
-                        
-                        // More Details
-                        VStack(alignment: .leading, spacing: 12) {
-                            if !detail.dogsAllowed.isEmpty {
-                                DetailRow(icon: "pawprint.fill", title: "Dogs Policy", value: detail.dogsAllowed)
-                            }
-                            
-                            if let wheelchair = detail.wheelchairsAndBuggies, !wheelchair.isEmpty {
-                                 DetailRow(icon: "figure.roll", title: "Wheelchair Access", value: wheelchair)
-                            }
-                            
-                            if !detail.staticLink.isEmpty, let url = URL(string: detail.staticLink) {
-                                Link(destination: url) {
-                                    HStack {
-                                        Text("View on DOC Website")
-                                            .fontWeight(.semibold)
-                                        Spacer()
-                                        Image(systemName: "arrow.up.right.square")
-                                    }
-                                    .padding()
-                                    .background(Color.green.opacity(0.1))
-                                    .foregroundColor(.green)
-                                    .cornerRadius(10)
-                                }
-                            }
-                        }
-                        .padding(.horizontal)
-                        
-                    } else if let errorMessage = docService.errorMessage {
-                        VStack(spacing: 12) {
-                            Image(systemName: "exclamationmark.triangle")
-                                .font(.largeTitle)
-                                .foregroundColor(.orange)
-                            
-                            Text("Unable to load details")
-                                .font(.headline)
-                            
-                            Text(errorMessage)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                                .multilineTextAlignment(.center)
-                            
-                            Button("Retry") {
-                                Task {
-                                    await docService.fetchTrackDetail(assetId: trackId)
-                                }
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 40)
                     }
-
+                    .padding(.vertical)
+                } else if let errorMessage = viewModel.errorMessage {
+                    VStack(spacing: 16) {
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.largeTitle)
+                            .foregroundColor(.orange)
+                        Text(errorMessage)
+                            .multilineTextAlignment(.center)
+                        Button("Retry") {
+                            Task {
+                                await viewModel.fetchDetails()
+                            }
+                        }
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity)
                 }
             }
         }
-        .edgesIgnoringSafeArea(.top)
-        .navigationBarTitleDisplayMode(.inline)
+        .ignoresSafeArea(edges: .top)
+        .navigationBarHidden(true)
+        .navigationBarBackButtonHidden(true)
         .task {
-            if docService.trackDetail == nil {
-                await docService.fetchTrackDetail(assetId: trackId)
-            }
+            await viewModel.fetchDetails()
         }
     }
-}
-
-struct StatBox: View {
-    let icon: String
-    let title: String
-    let value: String
     
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label {
-                Text(title)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            } icon: {
-                Image(systemName: icon)
-                    .foregroundColor(.accentColor)
-            }
-            
-            Text(value)
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .fixedSize(horizontal: false, vertical: true)
-                .lineLimit(2)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(Color(.systemGray6))
-        .cornerRadius(12)
-    }
-}
-
-struct DetailRow: View {
-    let icon: String
-    let title: String
-    let value: String
-    
-    var body: some View {
-        HStack(alignment: .top) {
-            Image(systemName: icon)
-                .foregroundColor(.secondary)
-                .frame(width: 24)
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                
-                // Allow simple HTML tag stripping if needed, or just display
-                Text(value.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression, range: nil))
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-        }
-        .padding(.vertical, 4)
+    private func getImageName(for trackName: String) -> String {
+        let name = trackName.lowercased()
+        if name.contains("tongariro") { return "tongariro" }
+        if name.contains("milford") { return "milford" }
+        if name.contains("routeburn") { return "routeburn" }
+        if name.contains("abel") { return "abel_tasman" }
+        if name.contains("kepler") { return "kepler" }
+        if name.contains("rakiura") { return "rakiura" }
+        return "track_placeholder"
     }
 }

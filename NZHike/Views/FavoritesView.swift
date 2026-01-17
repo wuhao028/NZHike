@@ -9,19 +9,23 @@ import SwiftUI
 
 struct FavoritesView: View {
     @EnvironmentObject var favoritesManager: FavoritesManager
-    @State private var selectedCategory: FavoriteCategory = .all
-    @State private var showMapView = false
     
-    private var hasFavorites: Bool {
-        !favoritesManager.favoriteTracks.isEmpty ||
-        !favoritesManager.favoriteHuts.isEmpty ||
-        !favoritesManager.favoriteCampsites.isEmpty
+    var body: some View {
+        FavoritesContentView(favoritesManager: favoritesManager)
+    }
+}
+
+struct FavoritesContentView: View {
+    @StateObject private var viewModel: FavoritesViewModel
+    
+    init(favoritesManager: FavoritesManager) {
+        _viewModel = StateObject(wrappedValue: FavoritesViewModel(favoritesManager: favoritesManager))
     }
     
     var body: some View {
         NavigationView {
             Group {
-                if !hasFavorites {
+                if !viewModel.hasFavorites {
                     VStack(spacing: 16) {
                         Image(systemName: "heart.slash")
                             .font(.system(size: 60))
@@ -40,7 +44,7 @@ struct FavoritesView: View {
                     .padding()
                 } else {
                     VStack(spacing: 0) {
-                        Picker("Category", selection: $selectedCategory) {
+                        Picker("Category", selection: $viewModel.selectedCategory) {
                             ForEach(FavoriteCategory.allCases, id: \.self) { category in
                                 Text(category.rawValue).tag(category)
                             }
@@ -50,25 +54,25 @@ struct FavoritesView: View {
                         .padding(.vertical, 8)
                         .background(Color(.systemBackground))
                         
-                        if showMapView {
-                            FavoritesMapView(selectedCategory: $selectedCategory)
+                        if viewModel.showMapView {
+                            FavoritesMapView(selectedCategory: $viewModel.selectedCategory)
                                 .transition(.opacity)
                         } else {
                             ScrollView {
                                 LazyVStack(spacing: 16) {
                                     // Tracks
-                                    if shouldShow(.tracks) && !favoritesManager.favoriteTracks.isEmpty {
-                                        if selectedCategory == .all {
+                                    if viewModel.shouldShow(.tracks) && !viewModel.favoriteTracks.isEmpty {
+                                        if viewModel.selectedCategory == .all {
                                             SectionHeader(title: "Tracks")
                                         }
                                         
-                                        ForEach(favoritesManager.favoriteTracks) { track in
+                                        ForEach(viewModel.favoriteTracks) { track in
                                             NavigationLink(destination: TrackDetailView(trackId: track.id)) {
                                                 TrackCard(
                                                     track: track,
                                                     isFavorite: true,
                                                     onFavoriteToggle: {
-                                                        favoritesManager.toggleFavorite(track: track)
+                                                        viewModel.toggleFavorite(track: track)
                                                     }
                                                 )
                                             }
@@ -77,18 +81,18 @@ struct FavoritesView: View {
                                     }
                                     
                                     // Huts
-                                    if shouldShow(.huts) && !favoritesManager.favoriteHuts.isEmpty {
-                                        if selectedCategory == .all {
+                                    if viewModel.shouldShow(.huts) && !viewModel.favoriteHuts.isEmpty {
+                                        if viewModel.selectedCategory == .all {
                                             SectionHeader(title: "Huts")
                                         }
                                         
-                                        ForEach(favoritesManager.favoriteHuts) { hut in
+                                        ForEach(viewModel.favoriteHuts) { hut in
                                             NavigationLink(destination: HutDetailView(hut: hut)) {
                                                 SimpleHutCard(
                                                     hut: hut,
                                                     isFavorite: true,
                                                     onFavoriteToggle: {
-                                                        favoritesManager.toggleFavorite(hut: hut)
+                                                        viewModel.toggleFavorite(hut: hut)
                                                     }
                                                 )
                                             }
@@ -97,18 +101,18 @@ struct FavoritesView: View {
                                     }
                                     
                                     // Campsites
-                                    if shouldShow(.campsites) && !favoritesManager.favoriteCampsites.isEmpty {
-                                        if selectedCategory == .all {
+                                    if viewModel.shouldShow(.campsites) && !viewModel.favoriteCampsites.isEmpty {
+                                        if viewModel.selectedCategory == .all {
                                             SectionHeader(title: "Campsites")
                                         }
                                         
-                                        ForEach(favoritesManager.favoriteCampsites) { campsite in
+                                        ForEach(viewModel.favoriteCampsites) { campsite in
                                             NavigationLink(destination: CampsiteDetailView(campsite: campsite)) {
                                                 SimpleCampsiteCard(
                                                     campsite: campsite,
                                                     isFavorite: true,
                                                     onFavoriteToggle: {
-                                                        favoritesManager.toggleFavorite(campsite: campsite)
+                                                        viewModel.toggleFavorite(campsite: campsite)
                                                     }
                                                 )
                                             }
@@ -127,25 +131,21 @@ struct FavoritesView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    if hasFavorites {
+                    if viewModel.hasFavorites {
                         Button(action: {
                             withAnimation(.easeInOut) {
-                                showMapView.toggle()
+                                viewModel.showMapView.toggle()
                             }
                         }) {
-                            Image(systemName: showMapView ? "list.bullet" : "map")
+                            Image(systemName: viewModel.showMapView ? "list.bullet" : "map")
                         }
                     }
                 }
             }
             .onAppear {
-                favoritesManager.loadFavorites()
+                viewModel.refresh()
             }
         }
-    }
-    
-    private func shouldShow(_ category: FavoriteCategory) -> Bool {
-        selectedCategory == .all || selectedCategory == category
     }
 }
 
@@ -155,18 +155,11 @@ struct SectionHeader: View {
     var body: some View {
         HStack {
             Text(title)
-                .font(.headline)
-                .foregroundColor(.secondary)
+                .font(.title3)
+                .fontWeight(.bold)
             Spacer()
         }
+        .padding(.horizontal)
         .padding(.top, 8)
     }
 }
-
-enum FavoriteCategory: String, CaseIterable {
-    case all = "All"
-    case tracks = "Tracks"
-    case huts = "Huts"
-    case campsites = "Campsites"
-}
-

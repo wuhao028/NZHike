@@ -12,25 +12,33 @@ struct SearchView: View {
     @EnvironmentObject var hutService: HutService
     @EnvironmentObject var campsiteService: CampsiteService
     @EnvironmentObject var favoritesManager: FavoritesManager
-    @State private var searchText = ""
-    @State private var selectedTab = 0
     
-    var filteredTracks: [Track] {
-        trackService.searchTracks(query: searchText)
+    var body: some View {
+        SearchContentView(
+            trackService: trackService,
+            hutService: hutService,
+            campsiteService: campsiteService,
+            favoritesManager: favoritesManager
+        )
     }
+}
+
+struct SearchContentView: View {
+    @StateObject private var viewModel: SearchViewModel
     
-    var filteredHuts: [Hut] {
-        hutService.searchHuts(query: searchText)
-    }
-    
-    var filteredCampsites: [Campsite] {
-        campsiteService.searchCampsites(query: searchText)
+    init(trackService: TrackService, hutService: HutService, campsiteService: CampsiteService, favoritesManager: FavoritesManager) {
+        _viewModel = StateObject(wrappedValue: SearchViewModel(
+            trackService: trackService,
+            hutService: hutService,
+            campsiteService: campsiteService,
+            favoritesManager: favoritesManager
+        ))
     }
     
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                Picker("Type", selection: $selectedTab) {
+                Picker("Type", selection: $viewModel.selectedTab) {
                     Text("Tracks").tag(0)
                     Text("Huts").tag(1)
                     Text("Campsites").tag(2)
@@ -39,42 +47,42 @@ struct SearchView: View {
                 .padding(.horizontal)
                 .padding(.bottom, 8)
                 
-                SearchBar(text: $searchText, placeholder: selectedTab == 0 ? "Search tracks..." : (selectedTab == 1 ? "Search huts..." : "Search campsites..."))
+                SearchBar(text: $viewModel.searchText, placeholder: viewModel.selectedTab == 0 ? "Search tracks..." : (viewModel.selectedTab == 1 ? "Search huts..." : "Search campsites..."))
                     .padding(.vertical, 8)
                     .padding(.horizontal)
                     .background(Color(.systemBackground).opacity(0.8))
                     .background(.ultraThinMaterial)
                 
-                if searchText.isEmpty {
+                if viewModel.searchText.isEmpty {
                     VStack(spacing: 16) {
-                        Image(systemName: selectedTab == 0 ? "magnifyingglass" : (selectedTab == 1 ? "house" : "tent"))
+                        Image(systemName: viewModel.selectedTab == 0 ? "magnifyingglass" : (viewModel.selectedTab == 1 ? "house" : "tent"))
                             .font(.system(size: 60))
                             .foregroundColor(.secondary)
                         
-                        Text(selectedTab == 0 ? "Search Tracks" : (selectedTab == 1 ? "Search Huts" : "Search Campsites"))
+                        Text(viewModel.selectedTab == 0 ? "Search Tracks" : (viewModel.selectedTab == 1 ? "Search Huts" : "Search Campsites"))
                             .font(.title2)
                             .fontWeight(.semibold)
                         
-                        Text(selectedTab == 0 ? "Enter track name, region, or keywords" : (selectedTab == 1 ? "Enter hut name or region" : "Enter campsite name or region"))
+                        Text(viewModel.selectedTab == 0 ? "Enter track name, region, or keywords" : (viewModel.selectedTab == 1 ? "Enter hut name or region" : "Enter campsite name or region"))
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding()
                 } else {
-                    if selectedTab == 0 {
-                        if filteredTracks.isEmpty {
+                    if viewModel.selectedTab == 0 {
+                        if viewModel.filteredTracks.isEmpty {
                             EmptyStateView()
                         } else {
                             ScrollView {
                                 LazyVStack(spacing: 12) {
-                                    ForEach(filteredTracks) { track in
+                                    ForEach(viewModel.filteredTracks) { track in
                                         NavigationLink(destination: TrackDetailView(trackId: track.id)) {
                                             TrackCard(
                                                 track: track,
-                                                isFavorite: favoritesManager.isFavorite(trackId: track.id),
+                                                isFavorite: viewModel.isFavorite(track: track),
                                                 onFavoriteToggle: {
-                                                    favoritesManager.toggleFavorite(track: track)
+                                                    viewModel.toggleFavorite(track: track)
                                                 }
                                             )
                                         }
@@ -84,19 +92,19 @@ struct SearchView: View {
                                 .padding()
                             }
                         }
-                    } else if selectedTab == 1 {
-                        if filteredHuts.isEmpty {
+                    } else if viewModel.selectedTab == 1 {
+                        if viewModel.filteredHuts.isEmpty {
                             EmptyStateView()
                         } else {
                             ScrollView {
                                 LazyVStack(spacing: 12) {
-                                    ForEach(filteredHuts) { hut in
+                                    ForEach(viewModel.filteredHuts) { hut in
                                         NavigationLink(destination: HutDetailView(hut: hut)) {
                                             SimpleHutCard(
                                                 hut: hut,
-                                                isFavorite: favoritesManager.isFavorite(hutId: hut.id),
+                                                isFavorite: viewModel.isFavorite(hut: hut),
                                                 onFavoriteToggle: {
-                                                    favoritesManager.toggleFavorite(hut: hut)
+                                                    viewModel.toggleFavorite(hut: hut)
                                                 }
                                             )
                                         }
@@ -107,18 +115,18 @@ struct SearchView: View {
                             }
                         }
                     } else {
-                        if filteredCampsites.isEmpty {
+                        if viewModel.filteredCampsites.isEmpty {
                             EmptyStateView()
                         } else {
                             ScrollView {
                                 LazyVStack(spacing: 12) {
-                                    ForEach(filteredCampsites) { campsite in
+                                    ForEach(viewModel.filteredCampsites) { campsite in
                                         NavigationLink(destination: CampsiteDetailView(campsite: campsite)) {
                                             SimpleCampsiteCard(
                                                 campsite: campsite,
-                                                isFavorite: favoritesManager.isFavorite(campsiteId: campsite.id),
+                                                isFavorite: viewModel.isFavorite(campsite: campsite),
                                                 onFavoriteToggle: {
-                                                    favoritesManager.toggleFavorite(campsite: campsite)
+                                                    viewModel.toggleFavorite(campsite: campsite)
                                                 }
                                             )
                                         }
@@ -133,54 +141,6 @@ struct SearchView: View {
             } // End of VStack
             .navigationTitle("Search")
             .navigationBarTitleDisplayMode(.inline)
-            .onAppear {
-                favoritesManager.loadFavorites()
-            }
         }
-    }
-}
-
-struct EmptyStateView: View {
-    var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 60))
-                .foregroundColor(.secondary)
-            
-            Text("No Results Found")
-                .font(.title2)
-                .fontWeight(.semibold)
-            
-            Text("Try using different keywords")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding()
-    }
-}
-
-struct SearchBar: View {
-    @Binding var text: String
-    var placeholder: String = "Search tracks..."
-    
-    var body: some View {
-        HStack {
-            Image(systemName: "magnifyingglass")
-                .foregroundColor(.secondary)
-            
-            TextField(placeholder, text: $text)
-                .textFieldStyle(PlainTextFieldStyle())
-            
-            if !text.isEmpty {
-                Button(action: { text = "" }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.secondary)
-                }
-            }
-        }
-        .padding(12)
-        .background(Color(.systemGray6))
-        .cornerRadius(12)
     }
 }

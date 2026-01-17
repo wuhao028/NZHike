@@ -8,164 +8,167 @@
 import SwiftUI
 
 struct HutDetailView: View {
+    @EnvironmentObject var apiService: DOCAPIService
+    @EnvironmentObject var favoritesManager: FavoritesManager
+    
     let hut: Hut
-    @StateObject private var apiService = DOCAPIService()
+    
+    var body: some View {
+        HutDetailContentView(
+            hut: hut,
+            apiService: apiService,
+            favoritesManager: favoritesManager
+        )
+    }
+}
+
+struct HutDetailContentView: View {
+    @StateObject private var viewModel: HutDetailViewModel
+    @Environment(\.dismiss) var dismiss
+    
+    init(hut: Hut, apiService: DOCAPIService, favoritesManager: FavoritesManager) {
+        _viewModel = StateObject(wrappedValue: HutDetailViewModel(
+            hut: hut,
+            apiService: apiService,
+            favoritesManager: favoritesManager
+        ))
+    }
     
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 0) {
                 // Header Image
-                if let detail = apiService.hutDetail, 
-                   let thumb = detail.introductionThumbnail, 
-                   let url = URL(string: thumb) {
-                    AsyncImage(url: url) { phase in
-                        switch phase {
-                        case .empty:
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.2))
-                                .overlay(ProgressView())
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                        case .failure:
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.2))
-                                .overlay(
-                                    Image(systemName: "house.fill")
-                                        .font(.system(size: 60))
-                                        .foregroundColor(.secondary)
-                                )
-                        @unknown default:
-                            EmptyView()
+                ZStack(alignment: .top) {
+                    Group {
+                        if let imageUrl = viewModel.hutDetail?.introductionThumbnail, let url = URL(string: imageUrl) {
+                            AsyncImage(url: url) { image in
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                            } placeholder: {
+                                colorPlaceholder
+                            }
+                        } else {
+                            colorPlaceholder
                         }
                     }
-                    .frame(height: 240)
+                    .frame(height: 250)
                     .clipped()
-                } else {
-                    Rectangle()
-                        .fill(Color.gray.opacity(0.2))
-                        .frame(height: 200)
-                        .overlay(
-                            Image(systemName: "house.fill")
-                                .font(.system(size: 60))
-                                .foregroundColor(.secondary)
-                        )
-                }
-                
-                VStack(alignment: .leading, spacing: 16) {
-                    Group {
-                        Text(hut.name)
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                        
-                        if let region = hut.region {
-                            HStack {
-                                Image(systemName: "map")
-                                Text(region)
-                                    .font(.headline)
-                                    .foregroundColor(.secondary)
-                            }
+                    
+                    // Top Bar
+                    HStack {
+                        Button(action: { dismiss() }) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 18, weight: .semibold))
+                                .padding(12)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Circle())
+                                .foregroundColor(.primary)
                         }
                         
-                        HStack {
-                            StatusBadge(status: hut.status)
-                            Spacer()
+                        Spacer()
+                        
+                        Button(action: { viewModel.toggleFavorite() }) {
+                            Image(systemName: viewModel.isFavorite ? "heart.fill" : "heart")
+                                .font(.system(size: 18, weight: .semibold))
+                                .padding(12)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Circle())
+                                .foregroundColor(viewModel.isFavorite ? .red : .primary)
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 50)
+                }
+                
+                VStack(alignment: .leading, spacing: 20) {
+                    // Title and Info
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(viewModel.hut.name)
+                            .font(.system(.title, design: .rounded))
+                            .fontWeight(.bold)
+                        
+                        if let region = viewModel.hut.region {
+                            Text(region)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
                         }
                     }
                     .padding(.horizontal)
                     
-                    if apiService.isLoading {
+                    if viewModel.isLoading {
                         ProgressView("Loading details...")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                    } else if let detail = apiService.hutDetail {
-                        Divider()
+                            .frame(maxWidth: .infinity, minHeight: 100)
+                    } else if let detail = viewModel.hutDetail {
+                        VStack(alignment: .leading, spacing: 20) {
+                            // Stats/Quick Info
+                            HStack(spacing: 20) {
+                                HutStatItem(icon: "bed.double.fill", title: "Bunks", value: String(detail.numberOfBunks ?? 0))
+                                HutStatItem(icon: "tag.fill", title: "Category", value: detail.hutCategory ?? "Standard")
+                            }
                             .padding(.horizontal)
-                        
-                        VStack(alignment: .leading, spacing: 12) {
-                            if let intro = detail.introduction {
-                                Text("About")
-                                    .font(.headline)
-                                Text(intro)
-                                    .font(.body)
-                            }
                             
-                            if let bunks = detail.numberOfBunks {
-                                HStack {
-                                    Image(systemName: "bed.double.fill")
-                                    Text("\(bunks) Bunks")
-                                }
-                                .font(.subheadline)
-                            }
+                            Divider()
+                                .padding(.horizontal)
                             
-                            if let category = detail.hutCategory {
-                                HStack {
-                                    Image(systemName: "tag.fill")
-                                    Text("Category: \(category)")
+                            // Introduction
+                            if let introduction = detail.introduction, !introduction.isEmpty {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Text("About this hut")
+                                        .font(.title3)
+                                        .fontWeight(.bold)
+                                    
+                                    Text(introduction.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression))
+                                        .font(.body)
+                                        .foregroundColor(.primary)
+                                        .lineSpacing(4)
                                 }
-                                .font(.subheadline)
-                            }
-                            
-                            if let proximity = detail.proximityToRoadEnd {
-                                HStack {
-                                    Image(systemName: "figure.walk")
-                                    Text("Proximity: \(proximity)")
-                                }
-                                .font(.subheadline)
-                            }
-                            
-                            if let bookable = detail.bookable {
-                                HStack {
-                                    Image(systemName: bookable ? "checkmark.circle.fill" : "xmark.circle.fill")
-                                    Text(bookable ? "Bookable" : "Not Bookable")
-                                }
-                                .font(.subheadline)
-                                .foregroundColor(bookable ? .green : .secondary)
-                            }
-                        }
-                        .padding(.horizontal)
-                        
-                        if let facilities = detail.facilities, !facilities.isEmpty {
-                            VStack(alignment: .leading, spacing: 12) {
-                                Text("Facilities")
-                                    .font(.headline)
-                                    .padding(.top, 4)
+                                .padding(.horizontal)
                                 
-                                ForEach(facilities, id: \.self) { facility in
-                                    Text("• \(facility)")
-                                        .font(.subheadline)
-                                }
+                                Divider()
+                                    .padding(.horizontal)
                             }
-                            .padding(.horizontal)
+                            
+                            // Facilities
+                            if let facilities = detail.facilities, !facilities.isEmpty {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Text("Facilities")
+                                        .font(.title3)
+                                        .fontWeight(.bold)
+                                    
+                                    FlowLayout(spacing: 8) {
+                                        ForEach(facilities, id: \.self) { facility in
+                                            Text(facility)
+                                                .font(.caption)
+                                                .padding(.horizontal, 10)
+                                                .padding(.vertical, 5)
+                                                .background(Color.blue.opacity(0.1))
+                                                .foregroundColor(.blue)
+                                                .cornerRadius(8)
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal)
+                                
+                                Divider()
+                                    .padding(.horizontal)
+                            }
                         }
-                    } else if let error = apiService.errorMessage {
-                        Text("Failed to load details: \(error)")
-                            .font(.caption)
-                            .foregroundColor(.red)
-                            .padding(.horizontal)
                     }
                     
-                    Divider()
-                        .padding(.horizontal)
-                    
-                    WeatherSectionView(region: hut.region)
-                    
-                    Divider()
-                        .padding(.horizontal)
-                    
-                    if hut.x != 0 && hut.y != 0 {
+                    if viewModel.hut.x != 0 && viewModel.hut.y != 0 {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Location")
-                                .font(.headline)
+                                .font(.title3)
+                                .fontWeight(.bold)
                             
-                            LocationMapView(easting: hut.x, northing: hut.y, title: hut.name)
+                            LocationMapView(easting: viewModel.hut.x, northing: viewModel.hut.y, title: viewModel.hut.name)
                             
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Coordinates (NZTM)")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
-                                Text("E: \(Int(hut.x)) N: \(Int(hut.y))")
+                                Text("E: \(Int(viewModel.hut.x)) N: \(Int(viewModel.hut.y))")
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                             }
@@ -173,47 +176,48 @@ struct HutDetailView: View {
                         .padding(.horizontal)
                     }
                 }
+                .padding(.vertical)
             }
         }
-        .navigationTitle(hut.name)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: {
-                    favoritesManager.toggleFavorite(hut: hut)
-                }) {
-                    Image(systemName: favoritesManager.isFavorite(hutId: hut.id) ? "heart.fill" : "heart")
-                        .foregroundColor(favoritesManager.isFavorite(hutId: hut.id) ? .red : .primary)
-                }
-            }
-        }
+        .ignoresSafeArea(edges: .top)
+        .navigationBarHidden(true)
+        .navigationBarBackButtonHidden(true)
         .task {
-            await apiService.fetchHutDetail(assetId: String(hut.assetId))
+            await viewModel.fetchDetails()
         }
     }
     
-    @EnvironmentObject var favoritesManager: FavoritesManager
+    private var colorPlaceholder: some View {
+        Rectangle()
+            .fill(Color.green.opacity(0.2))
+            .overlay(
+                Image(systemName: "house.fill")
+                    .font(.system(size: 60))
+                    .foregroundColor(.green.opacity(0.5))
+            )
+    }
 }
 
-struct StatusBadge: View {
-    let status: String
-    
-    var color: Color {
-        switch status.uppercased() {
-        case "OPEN": return .green
-        case "CLSD": return .red
-        default: return .orange
-        }
-    }
+struct HutStatItem: View {
+    let icon: String
+    let title: String
+    let value: String
     
     var body: some View {
-        Text(status)
-            .font(.caption)
-            .fontWeight(.bold)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(color.opacity(0.2))
-            .foregroundColor(color)
-            .cornerRadius(8)
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundColor(.green)
+                .frame(width: 32)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Text(value)
+                    .font(.subheadline)
+                    .fontWeight(.bold)
+            }
+        }
     }
 }

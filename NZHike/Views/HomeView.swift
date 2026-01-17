@@ -12,13 +12,33 @@ struct HomeView: View {
     @EnvironmentObject var hutService: HutService
     @EnvironmentObject var campsiteService: CampsiteService
     @EnvironmentObject var favoritesManager: FavoritesManager
-    @EnvironmentObject var appState: AppState
-    @State private var selectedTab = 0
+    
+    var body: some View {
+        HomeContentView(
+            trackService: trackService,
+            hutService: hutService,
+            campsiteService: campsiteService,
+            favoritesManager: favoritesManager
+        )
+    }
+}
+
+struct HomeContentView: View {
+    @StateObject private var viewModel: HomeViewModel
+    
+    init(trackService: TrackService, hutService: HutService, campsiteService: CampsiteService, favoritesManager: FavoritesManager) {
+        _viewModel = StateObject(wrappedValue: HomeViewModel(
+            trackService: trackService,
+            hutService: hutService,
+            campsiteService: campsiteService,
+            favoritesManager: favoritesManager
+        ))
+    }
     
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                Picker("Type", selection: $selectedTab) {
+                Picker("Type", selection: $viewModel.selectedTab) {
                     Text("Tracks").tag(0)
                     Text("Huts").tag(1)
                     Text("Campsites").tag(2)
@@ -27,7 +47,7 @@ struct HomeView: View {
                 .padding(.horizontal)
                 .padding(.bottom, 8)
                 
-                if selectedTab == 0 {
+                if viewModel.selectedTab == 0 {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 20) {
                             WeatherHeaderView()
@@ -45,17 +65,17 @@ struct HomeView: View {
                             }
                             .padding(.horizontal)
                             
-                            if trackService.recommendedTracks.isEmpty {
+                            if viewModel.recommendedTracks.isEmpty {
                                 emptyTracksView
                             } else {
                                 LazyVStack(spacing: 16) {
-                                    ForEach(trackService.recommendedTracks) { track in
+                                    ForEach(viewModel.recommendedTracks) { track in
                                         NavigationLink(destination: TrackDetailView(trackId: track.id)) {
                                             RecommendedTrackCard(
                                                 track: track,
-                                                isFavorite: favoritesManager.isFavorite(trackId: track.id),
+                                                isFavorite: viewModel.isFavorite(track: track),
                                                 onFavoriteToggle: {
-                                                    favoritesManager.toggleFavorite(track: track)
+                                                    viewModel.toggleFavorite(track: track)
                                                 }
                                             )
                                         }
@@ -68,7 +88,7 @@ struct HomeView: View {
                         }
                     }
                     .background(Color(.systemGroupedBackground))
-                } else if selectedTab == 1 {
+                } else if viewModel.selectedTab == 1 {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 20) {
                             VStack(alignment: .leading, spacing: 4) {
@@ -82,17 +102,17 @@ struct HomeView: View {
                             }
                             .padding(.horizontal)
                             
-                            if hutService.recommendedHuts.isEmpty {
+                            if viewModel.recommendedHuts.isEmpty {
                                 emptyHutsView
                             } else {
                                 LazyVStack(spacing: 16) {
-                                    ForEach(hutService.recommendedHuts) { hut in
+                                    ForEach(viewModel.recommendedHuts) { hut in
                                         NavigationLink(destination: HutDetailView(hut: hut)) {
                                             RecommendedHutCard(
                                                 hut: hut,
-                                                isFavorite: favoritesManager.isFavorite(hutId: hut.id),
+                                                isFavorite: viewModel.isFavorite(hut: hut),
                                                 onFavoriteToggle: {
-                                                    favoritesManager.toggleFavorite(hut: hut)
+                                                    viewModel.toggleFavorite(hut: hut)
                                                 }
                                             )
                                         }
@@ -119,17 +139,17 @@ struct HomeView: View {
                             }
                             .padding(.horizontal)
                             
-                            if campsiteService.recommendedCampsites.isEmpty {
+                            if viewModel.recommendedCampsites.isEmpty {
                                 emptyCampsitesView
                             } else {
                                 LazyVStack(spacing: 16) {
-                                    ForEach(campsiteService.recommendedCampsites) { campsite in
+                                    ForEach(viewModel.recommendedCampsites) { campsite in
                                         NavigationLink(destination: CampsiteDetailView(campsite: campsite)) {
                                             RecommendedCampsiteCard(
                                                 campsite: campsite,
-                                                isFavorite: favoritesManager.isFavorite(campsiteId: campsite.id),
+                                                isFavorite: viewModel.isFavorite(campsite: campsite),
                                                 onFavoriteToggle: {
-                                                    favoritesManager.toggleFavorite(campsite: campsite)
+                                                    viewModel.toggleFavorite(campsite: campsite)
                                                 }
                                             )
                                         }
@@ -146,16 +166,12 @@ struct HomeView: View {
             }
             .navigationTitle("Home")
             .navigationBarTitleDisplayMode(.inline)
-            .onAppear {
-                favoritesManager.loadFavorites()
-            }
         }
     }
     
-    // Extracted views to simplify
     private var emptyTracksView: some View {
         VStack(spacing: 16) {
-            if trackService.isLoading {
+            if viewModel.isTracksLoading {
                 ProgressView("Loading tracks...")
             } else {
                 Image(systemName: "mountain.2")
@@ -164,7 +180,7 @@ struct HomeView: View {
                 Text("No Recommended Tracks")
                     .font(.title2)
                     .fontWeight(.semibold)
-                if let errorMessage = trackService.errorMessage {
+                if let errorMessage = viewModel.tracksErrorMessage {
                     Text(errorMessage)
                         .font(.caption)
                         .foregroundColor(.red)
@@ -177,7 +193,7 @@ struct HomeView: View {
     
     private var emptyHutsView: some View {
         VStack(spacing: 16) {
-            if hutService.isLoading {
+            if viewModel.isHutsLoading {
                 ProgressView("Loading huts...")
             } else {
                 Image(systemName: "house")
@@ -186,7 +202,7 @@ struct HomeView: View {
                 Text("No Recommended Huts")
                     .font(.title2)
                     .fontWeight(.semibold)
-                if let errorMessage = hutService.errorMessage {
+                if let errorMessage = viewModel.hutsErrorMessage {
                     Text(errorMessage)
                         .font(.caption)
                         .foregroundColor(.red)
@@ -199,7 +215,7 @@ struct HomeView: View {
     
     private var emptyCampsitesView: some View {
         VStack(spacing: 16) {
-            if campsiteService.isLoading {
+            if viewModel.isCampsitesLoading {
                 ProgressView("Loading campsites...")
             } else {
                 Image(systemName: "tent")
@@ -208,7 +224,7 @@ struct HomeView: View {
                 Text("No Recommended Campsites")
                     .font(.title2)
                     .fontWeight(.semibold)
-                if let errorMessage = campsiteService.errorMessage {
+                if let errorMessage = viewModel.campsitesErrorMessage {
                     Text(errorMessage)
                         .font(.caption)
                         .foregroundColor(.red)

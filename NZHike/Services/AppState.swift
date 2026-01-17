@@ -13,6 +13,7 @@ class AppState: ObservableObject {
     @Published var hutService = HutService()
     @Published var campsiteService = CampsiteService()
     @Published var favoritesManager = FavoritesManager()
+    @Published var apiService = DOCAPIService()
     
     @Published var isDataLoaded = false
     @Published var currentTheme: AppTheme = AppTheme(rawValue: UserDefaults.standard.string(forKey: "appTheme") ?? "system") ?? .system

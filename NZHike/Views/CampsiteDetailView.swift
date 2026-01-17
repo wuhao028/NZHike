@@ -8,244 +8,192 @@
 import SwiftUI
 
 struct CampsiteDetailView: View {
+    @EnvironmentObject var apiService: DOCAPIService
+    @EnvironmentObject var favoritesManager: FavoritesManager
+    
     let campsite: Campsite
-    @StateObject private var apiService = DOCAPIService()
+    
+    var body: some View {
+        CampsiteDetailContentView(
+            campsite: campsite,
+            apiService: apiService,
+            favoritesManager: favoritesManager
+        )
+    }
+}
+
+struct CampsiteDetailContentView: View {
+    @StateObject private var viewModel: CampsiteDetailViewModel
+    @Environment(\.dismiss) var dismiss
+    
+    init(campsite: Campsite, apiService: DOCAPIService, favoritesManager: FavoritesManager) {
+        _viewModel = StateObject(wrappedValue: CampsiteDetailViewModel(
+            campsite: campsite,
+            apiService: apiService,
+            favoritesManager: favoritesManager
+        ))
+    }
     
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 0) {
                 // Header Image
-                if let detail = apiService.campsiteDetail, 
-                   let thumb = detail.introductionThumbnail, 
-                   let url = URL(string: thumb) {
-                    AsyncImage(url: url) { phase in
-                        switch phase {
-                        case .empty:
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.2))
-                                .overlay(ProgressView())
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                        case .failure:
-                            Rectangle()
-                                .fill(Color.gray.opacity(0.2))
-                                .overlay(
-                                    Image(systemName: "tent.fill")
-                                        .font(.system(size: 60))
-                                        .foregroundColor(.secondary)
-                                )
-                        @unknown default:
-                            EmptyView()
+                ZStack(alignment: .top) {
+                    Group {
+                        if let imageUrl = viewModel.campsiteDetail?.introductionThumbnail, let url = URL(string: imageUrl) {
+                            AsyncImage(url: url) { image in
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                            } placeholder: {
+                                colorPlaceholder
+                            }
+                        } else {
+                            colorPlaceholder
                         }
                     }
-                    .frame(height: 240)
+                    .frame(height: 250)
                     .clipped()
-                } else {
-                    Rectangle()
-                        .fill(Color.gray.opacity(0.2))
-                        .frame(height: 200)
-                        .overlay(
-                            Image(systemName: "tent.fill")
-                                .font(.system(size: 60))
-                                .foregroundColor(.secondary)
-                        )
-                }
-                
-                VStack(alignment: .leading, spacing: 16) {
-                    Group {
-                        Text(campsite.name)
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                        
-                        if let region = campsite.region {
-                            HStack {
-                                Image(systemName: "map")
-                                Text(region)
-                                    .font(.headline)
-                                    .foregroundColor(.secondary)
-                            }
+                    
+                    // Top Bar
+                    HStack {
+                        Button(action: { dismiss() }) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 18, weight: .semibold))
+                                .padding(12)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Circle())
+                                .foregroundColor(.primary)
                         }
                         
-                        HStack {
-                            StatusBadge(status: campsite.status)
-                            Spacer()
+                        Spacer()
+                        
+                        Button(action: { viewModel.toggleFavorite() }) {
+                            Image(systemName: viewModel.isFavorite ? "heart.fill" : "heart")
+                                .font(.system(size: 18, weight: .semibold))
+                                .padding(12)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Circle())
+                                .foregroundColor(viewModel.isFavorite ? .red : .primary)
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 50)
+                }
+                
+                VStack(alignment: .leading, spacing: 20) {
+                    // Title and Info
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(viewModel.campsite.name)
+                            .font(.system(.title, design: .rounded))
+                            .fontWeight(.bold)
+                        
+                        if let region = viewModel.campsite.region {
+                            Text(region)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
                         }
                     }
                     .padding(.horizontal)
                     
-                    if apiService.isLoading {
+                    if viewModel.isLoading {
                         ProgressView("Loading details...")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                    } else if let detail = apiService.campsiteDetail {
-                        Divider()
+                            .frame(maxWidth: .infinity, minHeight: 100)
+                    } else if let detail = viewModel.campsiteDetail {
+                        VStack(alignment: .leading, spacing: 20) {
+                            // Stats/Quick Info
+                            HStack(spacing: 20) {
+                                HutStatItem(icon: "tent.fill", title: "Sites", value: String(detail.numberOfUnpoweredSites ?? 0))
+                                HutStatItem(icon: "tag.fill", title: "Category", value: detail.campsiteCategory ?? "Standard")
+                            }
                             .padding(.horizontal)
-                        
-                        VStack(alignment: .leading, spacing: 12) {
-                            if let intro = detail.introduction {
-                                Text("About")
-                                    .font(.headline)
-                                Text(intro)
-                                    .font(.body)
-                            }
                             
-                            // Display powered/unpowered sites if available
-                            if let powered = detail.numberOfPoweredSites, powered > 0 {
-                                HStack {
-                                    Image(systemName: "bolt.fill")
-                                    Text("\(powered) Powered Sites")
-                                }
-                                .font(.subheadline)
-                            }
+                            Divider()
+                                .padding(.horizontal)
                             
-                            if let unpowered = detail.numberOfUnpoweredSites, unpowered > 0 {
-                                HStack {
-                                    Image(systemName: "bolt.slash.fill")
-                                    Text("\(unpowered) Unpowered Sites")
-                                }
-                                .font(.subheadline)
-                            }
-                            
-                            if let bookable = detail.bookable {
-                                HStack {
-                                    Image(systemName: bookable ? "checkmark.circle.fill" : "xmark.circle.fill")
-                                    Text(bookable ? "Bookable" : "Not Bookable")
-                                }
-                                .font(.subheadline)
-                                .foregroundColor(bookable ? .green : .secondary)
-                            }
-                            
-                            if let category = detail.campsiteCategory {
-                                HStack {
-                                    Image(systemName: "tag.fill")
-                                    Text("Category: \(category)")
-                                }
-                                .font(.subheadline)
-                            }
-                        }
-                        .padding(.horizontal)
-                        
-                        VStack(alignment: .leading, spacing: 12) {
-                            if let landscapes = detail.landscape, !landscapes.isEmpty {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Landscape")
-                                        .font(.headline)
-                                        .padding(.top, 4)
+                            // Introduction
+                            if let introduction = detail.introduction, !introduction.isEmpty {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Text("About this campsite")
+                                        .font(.title3)
+                                        .fontWeight(.bold)
                                     
-                                    FlowLayout(spacing: 8) {
-                                        ForEach(landscapes, id: \.self) { item in
-                                            ChipView(text: item, color: .green)
-                                        }
-                                    }
+                                    Text(introduction.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression))
+                                        .font(.body)
+                                        .foregroundColor(.primary)
+                                        .lineSpacing(4)
                                 }
-                            }
-                            
-                            if let activities = detail.activities, !activities.isEmpty {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Activities")
-                                        .font(.headline)
-                                        .padding(.top, 4)
-                                    
-                                    FlowLayout(spacing: 8) {
-                                        ForEach(activities, id: \.self) { item in
-                                            ChipView(text: item, color: .blue)
-                                        }
-                                    }
-                                }
-                            }
-                            
-                            if let access = detail.access, !access.isEmpty {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Access")
-                                        .font(.headline)
-                                        .padding(.top, 4)
-                                    
-                                    ForEach(access, id: \.self) { item in
-                                        Text("• \(item)")
-                                            .font(.subheadline)
-                                    }
-                                }
-                            }
-                            
-                            if let dogs = detail.dogsAllowed {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Dogs Allowed")
-                                        .font(.headline)
-                                        .padding(.top, 4)
-                                    
-                                    Text(dogs.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression, range: nil))
-                                        .font(.subheadline)
-                                        .foregroundColor(.secondary)
-                                }
-                            }
-                            
-                            if let facilities = detail.facilities, !facilities.isEmpty {
-                                Text("Facilities")
-                                    .font(.headline)
-                                    .padding(.top, 4)
+                                .padding(.horizontal)
                                 
-                                ForEach(facilities, id: \.self) { facility in
-                                    Text("• \(facility)")
-                                        .font(.subheadline)
+                                Divider()
+                                    .padding(.horizontal)
+                            }
+                            
+                            // Facilities
+                            if let facilities = detail.facilities, !facilities.isEmpty {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Text("Facilities")
+                                        .font(.title3)
+                                        .fontWeight(.bold)
+                                    
+                                    FlowLayout(spacing: 8) {
+                                        ForEach(facilities, id: \.self) { facility in
+                                            Text(facility)
+                                                .font(.caption)
+                                                .padding(.horizontal, 10)
+                                                .padding(.vertical, 5)
+                                                .background(Color.blue.opacity(0.1))
+                                                .foregroundColor(.blue)
+                                                .cornerRadius(8)
+                                        }
+                                    }
                                 }
+                                .padding(.horizontal)
+                                
+                                Divider()
+                                    .padding(.horizontal)
                             }
                         }
-                        .padding(.horizontal)
-                    } else if let error = apiService.errorMessage {
-                        Text("Failed to load details: \(error)")
-                            .font(.caption)
-                            .foregroundColor(.red)
-                            .padding(.horizontal)
                     }
                     
-                    Divider()
-                        .padding(.horizontal)
-                    
-                    WeatherSectionView(region: campsite.region)
-                    
-                    Divider()
-                        .padding(.horizontal)
-                    
-                    if campsite.x != 0 && campsite.y != 0 {
+                    if viewModel.campsite.x != 0 && viewModel.campsite.y != 0 {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Location")
-                                .font(.headline)
+                                .font(.title3)
+                                .fontWeight(.bold)
                             
-                            LocationMapView(easting: campsite.x, northing: campsite.y, title: campsite.name)
+                            LocationMapView(easting: viewModel.campsite.x, northing: viewModel.campsite.y, title: viewModel.campsite.name)
                             
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("Coordinates (NZTM)")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
-                                Text("E: \(Int(campsite.x)) N: \(Int(campsite.y))")
+                                Text("E: \(Int(viewModel.campsite.x)) N: \(Int(viewModel.campsite.y))")
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                             }
                         }
                         .padding(.horizontal)
                     }
-
                 }
+                .padding(.vertical)
             }
         }
-        .navigationTitle(campsite.name)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: {
-                    favoritesManager.toggleFavorite(campsite: campsite)
-                }) {
-                    Image(systemName: favoritesManager.isFavorite(campsiteId: campsite.id) ? "heart.fill" : "heart")
-                        .foregroundColor(favoritesManager.isFavorite(campsiteId: campsite.id) ? .red : .primary)
-                }
-            }
-        }
+        .ignoresSafeArea(edges: .top)
+        .navigationBarHidden(true)
+        .navigationBarBackButtonHidden(true)
         .task {
-            await apiService.fetchCampsiteDetail(assetId: String(campsite.assetId))
+            await viewModel.fetchDetails()
         }
     }
     
-    @EnvironmentObject var favoritesManager: FavoritesManager
+    private var colorPlaceholder: some View {
+        Rectangle()
+            .fill(Color.orange.opacity(0.2))
+            .overlay(
+                Image(systemName: "tent.fill")
+                    .font(.system(size: 60))
+                    .foregroundColor(.orange.opacity(0.5))
+            )
+    }
 }
