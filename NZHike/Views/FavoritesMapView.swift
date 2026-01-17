@@ -220,7 +220,7 @@ struct FavoritesMapView: View {
     private func iconForType(_ type: FavoriteCategory) -> String {
         switch type {
         case .tracks: return "figure.walk"
-        case .huts: return "house.fill"
+        case .huts: return "house.lodge.fill"
         case .campsites: return "tent.fill"
         case .all: return "mappin"
         }
