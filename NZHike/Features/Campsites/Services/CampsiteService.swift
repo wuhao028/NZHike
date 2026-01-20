@@ -29,30 +29,51 @@ class CampsiteService: ObservableObject {
     
     private func loadCampsites() {
         isLoading = true
-        errorMessage = nil
         
-        guard let url = Bundle.main.url(forResource: "allCampsites", withExtension: "json") else {
-            errorMessage = "allCampsites.json file not found in bundle"
-            isLoading = false
-            return
-        }
-        
-        guard let data = try? Data(contentsOf: url) else {
-            errorMessage = "Failed to read allCampsites.json data"
-            isLoading = false
-            return
-        }
-        
-        do {
-            allCampsites = try JSONDecoder().decode([Campsite].self, from: data)
+        Task.detached(priority: .userInitiated) {
+            var loadedCampsites: [Campsite] = []
+            var loadedRecommendedCampsites: [Campsite] = []
+            var errorMsg: String?
             
-            // Filter recommended campsites
-            recommendedCampsites = allCampsites.filter { recommendedAssetIds.contains($0.assetId) }
+            guard let url = Bundle.main.url(forResource: "allCampsites", withExtension: "json") else {
+                errorMsg = "allCampsites.json file not found in bundle"
+                await MainActor.run {
+                    self.errorMessage = errorMsg
+                    self.isLoading = false
+                }
+                return
+            }
             
-            isLoading = false
-        } catch {
-            errorMessage = "Failed to decode allCampsites.json: \(error.localizedDescription)"
-            isLoading = false
+            guard let data = try? Data(contentsOf: url) else {
+                errorMsg = "Failed to read allCampsites.json data"
+                await MainActor.run {
+                    self.errorMessage = errorMsg
+                    self.isLoading = false
+                }
+                return
+            }
+            
+            do {
+                loadedCampsites = try JSONDecoder().decode([Campsite].self, from: data)
+                
+                // Hardcoded IDs to match what was in recommendedAssetIds
+                let targetIds: Set<Int> = [
+                    100065349, 100065488, 100066095, 100044315, 100031362
+                ]
+                
+                loadedRecommendedCampsites = loadedCampsites.filter { targetIds.contains($0.assetId) }
+                
+                await MainActor.run {
+                    self.allCampsites = loadedCampsites
+                    self.recommendedCampsites = loadedRecommendedCampsites
+                    self.isLoading = false
+                }
+            } catch {
+                await MainActor.run {
+                    self.errorMessage = "Failed to decode allCampsites.json: \(error.localizedDescription)"
+                    self.isLoading = false
+                }
+            }
         }
     }
     

@@ -23,11 +23,17 @@ class FavoritesManager: ObservableObject {
     private let persistenceController = PersistenceController.shared
     
     init() {
-        loadFavorites()
+        // Defer loading to avoid blocking init
+        Task {
+            loadFavorites()
+        }
     }
     
     func loadFavorites() {
-        // Load Tracks (Core Data)
+        // Load Tracks (Core Data) - Must be on Main Thread
+        // But doing it in a Task ensures it runs in the next run loop turn at least? 
+        // Actually, loadFavorites is called from Task in init, so it runs asynchronously to init.
+        
         let context = persistenceController.container.viewContext
         let request: NSFetchRequest<FavoriteTrackEntity> = FavoriteTrackEntity.fetchRequest()
         request.sortDescriptors = [NSSortDescriptor(keyPath: \FavoriteTrackEntity.favoritedAt, ascending: false)]
@@ -42,48 +48,76 @@ class FavoritesManager: ObservableObject {
             favoriteTrackIds = []
         }
         
-        // Load Huts (JSON)
-        loadHutFavorites()
-        
-        // Load Campsites (JSON)
-        loadCampsiteFavorites()
+        // Load Huts and Campsites (JSON) in background
+        Task {
+            await loadHutFavorites()
+            await loadCampsiteFavorites()
+        }
     }
     
-    func loadHutFavorites() {
-        let url = getDocumentsDirectory().appendingPathComponent("favorite_huts.json")
-        if let data = try? Data(contentsOf: url),
-           let huts = try? JSONDecoder().decode([Hut].self, from: data) {
-            favoriteHuts = huts
-            favoriteHutIds = Set(huts.map { $0.id })
-        } else {
-            favoriteHuts = []
-            favoriteHutIds = []
-        }
+    func loadHutFavorites() async {
+        let docsDir = getDocumentsDirectory()
+        
+        await Task.detached {
+            let url = docsDir.appendingPathComponent("favorite_huts.json")
+            if let data = try? Data(contentsOf: url),
+               let huts = try? JSONDecoder().decode([Hut].self, from: data) {
+                await MainActor.run {
+                    self.favoriteHuts = huts
+                    self.favoriteHutIds = Set(huts.map { $0.id })
+                }
+            } else {
+                await MainActor.run {
+                    self.favoriteHuts = []
+                    self.favoriteHutIds = []
+                }
+            }
+        }.value
     }
     
     func saveHutFavorites() {
         let url = getDocumentsDirectory().appendingPathComponent("favorite_huts.json")
-        if let data = try? JSONEncoder().encode(favoriteHuts) {
-            try? data.write(to: url)
+        Task.detached {
+            // Need to capture data, accessing self.favoriteHuts on background is unsafe if it's main actor isolated.
+            // But we are in a synchronous method on MainActor (implied).
+            // So we should capture the data before dispatching.
+        }
+        // Correct approach for save: Capture the data to save
+        let hutsToSave = favoriteHuts
+        Task.detached {
+            if let data = try? JSONEncoder().encode(hutsToSave) {
+                try? data.write(to: url)
+            }
         }
     }
     
-    func loadCampsiteFavorites() {
-        let url = getDocumentsDirectory().appendingPathComponent("favorite_campsites.json")
-        if let data = try? Data(contentsOf: url),
-           let campsites = try? JSONDecoder().decode([Campsite].self, from: data) {
-            favoriteCampsites = campsites
-            favoriteCampsiteIds = Set(campsites.map { $0.id })
-        } else {
-            favoriteCampsites = []
-            favoriteCampsiteIds = []
-        }
+    func loadCampsiteFavorites() async {
+        let docsDir = getDocumentsDirectory()
+        
+        await Task.detached {
+            let url = docsDir.appendingPathComponent("favorite_campsites.json")
+            if let data = try? Data(contentsOf: url),
+               let campsites = try? JSONDecoder().decode([Campsite].self, from: data) {
+                await MainActor.run {
+                    self.favoriteCampsites = campsites
+                    self.favoriteCampsiteIds = Set(campsites.map { $0.id })
+                }
+            } else {
+                await MainActor.run {
+                    self.favoriteCampsites = []
+                    self.favoriteCampsiteIds = []
+                }
+            }
+        }.value
     }
     
     func saveCampsiteFavorites() {
         let url = getDocumentsDirectory().appendingPathComponent("favorite_campsites.json")
-        if let data = try? JSONEncoder().encode(favoriteCampsites) {
-            try? data.write(to: url)
+        let campsitesToSave = favoriteCampsites
+        Task.detached {
+            if let data = try? JSONEncoder().encode(campsitesToSave) {
+                try? data.write(to: url)
+            }
         }
     }
     
