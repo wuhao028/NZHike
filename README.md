@@ -16,7 +16,7 @@
 | | | | |
 |:---:|:---:|:---:|:---:|
 | <img src="screenshots/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-01-27%20at%2013.33.56.png" width="250" /> | <img src="screenshots/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-01-27%20at%2013.34.07.png" width="250" /> | <img src="screenshots/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-01-27%20at%2013.34.24.png" width="250" /> | <img src="screenshots/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-01-27%20at%2013.34.30.png" width="250" /> |
-| <img src="screenshots/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-01-27%20at%2013.34.40.png" width="250" /> | <img src="screenshots/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-01-27%20at%2013.45.32.png" width="250" /> | <img src="screenshots/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-01-27%20at%2013.45.40.png" width="250" /> | |
+| <img src="screenshots/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-01-27%20at%2013.34.40.png" width="250" /> | <img src="screenshots/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-01-27%20at%2013.45.32.png" width="250" /> | <img src="screenshots/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-01-27%20at%2013.45.40.png" width="250" /> | <img src="screenshots/Simulator%20Screenshot%20-%20iPhone%2017%20Pro%20-%202026-01-27%20at%2013.52.40.png" width="250" /> |
 
 ## Requirements 🛠️
 
